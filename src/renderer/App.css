@@ -2,10 +2,9 @@
  * @NOTE: Prepend a `~` to css file paths that are in your node_modules
  *        See https://github.com/webpack-contrib/sass-loader#imports
  */
-body {
+/* body {
   position: relative;
   color: white;
-  height: 100vh;
   background: linear-gradient(
     200.96deg,
     #fedc2a -29.09%,
@@ -13,7 +12,6 @@ body {
     #7a2c9e 129.35%
   );
   font-family: sans-serif;
-  overflow-y: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -59,4 +57,154 @@ a:hover {
   justify-content: center;
   align-items: center;
   margin: 20px 0;
+} */
+
+
+body {
+    font-family: 'Ubuntu', sans-serif !important;
+    background-color: #f5f5f5 !important;
+    margin: 0px !important;
+}
+
+
+
+.whiteText{
+    color: white;
+}
+
+.whiteText:hover{
+    color: whitesmoke;
+}
+
+.navbar{
+    background-color: indigo;
+    color: white ;
+}
+
+.p-card{
+    margin-bottom: 8px;
+}
+
+.margin-bottom-10{
+    margin-bottom: 10px;
+}
+
+.wide-input{
+    min-width: 75%;
+}
+
+.container{
+    margin-left: 16px;
+    margin-right: 16px;
+}
+
+
+
+.dropShadow{
+    text-shadow: 2px 2px 3px grey;
+}
+
+.unsetAll{
+    all: unset;
+}
+
+.link{
+    cursor: pointer;
+}
+
+.centeredField{
+    min-width: 350px;
+        max-width: 50%;
+        margin: auto;
+}
+
+.chip{
+    margin: 4px;
+    padding: 2px 4px;
+    border-radius: 2px;
+}
+.light-blue{
+    background-color: lightblue;
+}
+
+.dashboardContainer{
+        display: flex;
+            -webkit-box-pack: start;
+            justify-content: flex-start;
+            -webkit-box-align: center;
+            align-items: center;
+            position: relative;
+            text-decoration: none;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: left;
+            padding-top: 0px;
+            padding-bottom: 0px;
+            gap: 8px;
+            min-height: 120px;
+            height: 150px;
+}
+
+.expandOnHover:hover {
+    transform: scale(1.07);
+    transition: all;
+    transition-timing-function: ease-in;
+    transition-duration: 0.3s;
+}
+.dashboardContainerContent{
+    flex: 1 1 auto;
+        min-width: 0px;
+        padding-top: 0px;
+        padding-bottom: 0px;
+        margin-top: 3.6px;
+        margin-bottom: 3.6px;
+}
+
+.dashboardIcon{
+
+            position: relative;
+                display: flex;
+                -webkit-box-align: center;
+                align-items: center;
+                -webkit-box-pack: center;
+                justify-content: center;
+                flex-shrink: 0;
+                font-family: Roboto, sans-serif;
+                line-height: 1;
+                overflow: hidden;
+                user-select: none;
+                background: #f8d7fe;
+                cursor: pointer;
+                border-radius: 8px;
+                width: 70px;
+                height: 70px;
+                font-size: 1.5rem;
+                color: #9c27b0
+}
+
+.dashboardIconContainer{
+    min-width: 56px;
+        flex-shrink: 0;
+        width: 70px;
+        height: 70px;
+}
+
+.dashboardHeader{
+    font-weight: bold;
+}
+.dashboardDescription{
+    color: grey;
+}
+
+.text-primary{
+    color: indigo;
+}
+
+.flex-column{
+    display: flex;
+    flex-direction: column;
+}
+
+.center-input-text{
+    text-align: center;
 }

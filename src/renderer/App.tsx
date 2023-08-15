@@ -1,6 +1,35 @@
-import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
+/* eslint-disable react/jsx-no-useless-fragment */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { ReactNode, useEffect } from 'react';
+import { RequireAuth, useIsAuthenticated } from 'react-auth-kit';
+import {
+  MemoryRouter as Router,
+  Routes,
+  Route,
+  HashRouter,
+  Navigate,
+  useLocation,
+} from 'react-router-dom';
+import CssBaseline from '@mui/material/CssBaseline';
 import icon from '../../assets/icon.svg';
+import 'primereact/resources/themes/md-light-indigo/theme.css';
+import 'primereact/resources/primereact.min.css';
+import 'primeicons/primeicons.css';
+import 'primeflex/primeflex.css';
+import '@fontsource/lato';
+import '@fontsource/ubuntu';
 import './App.css';
+import Index from './pages';
+import Activate from './pages/activate';
+import AddRole from './pages/addRole';
+import AddUser from './pages/addUser';
+import Login from './pages/login';
+import NotFound from './pages/notFound';
+import ResetPassword from './pages/resetPassword';
+import Roles from './pages/roles';
+import SetAdminPasswordPage from './pages/setAdminPasswordPage';
+import SettingsPage from './pages/settings';
+import Users from './pages/users';
 
 function Hello() {
   return (
@@ -39,12 +68,51 @@ function Hello() {
   );
 }
 
+function Private({ Component }: { Component: ReactNode }) {
+  const isAuthenticated = useIsAuthenticated();
+  const auth = isAuthenticated();
+  return auth ? <>{Component}</> : <Navigate to="/login" />;
+}
+
+function RouteChangeLogger() {
+  const location = useLocation();
+
+  useEffect(() => {
+    console.log('Current route:', location.pathname);
+  }, [location]);
+
+  return null; // This component doesn't render anything
+}
+
 export default function App() {
   return (
-    <Router>
+    <HashRouter>
       <Routes>
-        <Route path="/" element={<Hello />} />
+        <Route path="/activate" element={<Activate />} />
+        <Route path="/help" element={<Index />} />
+        <Route
+          path="/settings"
+          element={<Private Component={<SettingsPage />} />}
+        />
+        <Route path="/adminPassword" element={<SetAdminPasswordPage />} />
+        <Route path="/roles" element={<Private Component={<Roles />} />} />
+        <Route path="/addRole" element={<AddRole />} />
+        <Route
+          path="/addRole/:id"
+          element={<Private Component={<AddRole />} />}
+        />
+        <Route path="/users" element={<Private Component={<Users />} />} />
+        <Route path="/addUser" element={<Private Component={<AddUser />} />} />
+        <Route
+          path="/addUser/:id"
+          element={<Private Component={<AddUser />} />}
+        />
+        <Route path="/login" element={<Login />} />
+        <Route path="/resetPassword" element={<ResetPassword />} />
+        <Route path="/" element={<Index />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
-    </Router>
+      <RouteChangeLogger />
+    </HashRouter>
   );
 }
