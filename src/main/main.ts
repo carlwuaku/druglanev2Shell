@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint global-require: off, no-console: off, promise/always-return: off */
 
 /**
@@ -12,6 +13,13 @@ import path from 'path';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import { spawn } from 'child_process';
+import {
+  ACTIVATION_RESULT,
+  CALL_ACTIVATION,
+  GET_SERVER_URL,
+  SERVER_URL_RECEIVED,
+} from '../renderer/utils/stringKeys';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 
@@ -24,12 +32,76 @@ class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
+const serverUrl: string = 'http://127.0.0.1:5100';
 
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
   console.log(msgTemplate(arg));
   event.reply('ipc-example', msgTemplate('pong'));
 });
+
+// ipcMain.on(CALL_ACTIVATION, async (event, key) => {
+//   try {
+//     let data = await verifyLicenseKey(key);
+//     mainWindow?.webContents?.send(ACTIVATION_RESULT, {
+//       data: data.data,
+//       error: false,
+//       message: '',
+//     });
+//   } catch (error) {
+//     mainWindow?.webContents?.send(ACTIVATION_RESULT, {
+//       data: null,
+//       error: true,
+//       message: error,
+//     });
+//   }
+// });
+
+function sendServerUrl() {
+  mainWindow?.webContents?.send(
+    SERVER_URL_RECEIVED,
+    { data: serverUrl, time: new Date().toLocaleString() },
+    serverUrl
+  );
+}
+
+// ipcMain.on(GET_APP_DETAILS, getAppDetails);
+// ipcMain.on(GET_SERVER_STATE, () => {
+//   sendServerState(serverState);
+// });
+
+// ipcMain.on(RESTART_SERVER, async (event, data) => {
+//   await spawnServer();
+// });
+
+// ipcMain.on(RESTART_APPLICATION, async (event, data) => {
+//   restartApp();
+// });
+
+ipcMain.on(GET_SERVER_URL, sendServerUrl);
+
+// ipcMain.on(GET_PREFERENCE, (event, data: { key: string }) => {
+//   let value = store.get(data.key, defaultOptions[data.key]);
+//   event.reply(PREFERENCE_RECEIVED, { name: data.key, value: value });
+// });
+
+// ipcMain.on(GET_PREFERENCES, (event) => {
+//   store.openInEditor();
+// });
+
+// ipcMain.on(SET_PREFERENCE, (event, data: { key: string; value: any }) => {
+//   try {
+//     savePreference(data.key, data.value);
+//     event.reply(PREFERENCE_SET, {
+//       success: true,
+//       message: 'Setting saved successfully',
+//     });
+//   } catch (error) {
+//     event.reply(PREFERENCE_SET, { success: false, message: error });
+//   }
+// });
+
+// ipcMain.on(SET_ADMIN_PASSWORD, (event, data: { password: string }) => {});
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -128,6 +200,17 @@ app
   .whenReady()
   .then(() => {
     createWindow();
+    const nestServer = spawn('node', [
+      path.join(__dirname, '../server/main.js'),
+    ]);
+
+    nestServer.stdout.on('data', (data) => {
+      console.log(`Nest.js Server: ${data}`);
+    });
+
+    nestServer.stderr.on('data', (data) => {
+      console.error(`Nest.js Server Error: ${data}`);
+    });
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.
