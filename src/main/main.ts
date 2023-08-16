@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint global-require: off, no-console: off, promise/always-return: off */
 
@@ -13,16 +14,28 @@ import path from 'path';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
-import { spawn } from 'child_process';
+import { ChildProcess, fork, SendHandle, spawn } from 'child_process';
 import {
   ACTIVATION_RESULT,
   CALL_ACTIVATION,
   GET_SERVER_URL,
+  SERVER_STATE_CHANGED,
   SERVER_URL_RECEIVED,
 } from '../renderer/utils/stringKeys';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import { EventEmitter } from "stream";
+import { isAppActivated } from './server/config/appValidation';
+import { logger } from './utils/logger';
+import { startServer } from './server/server';
 
+class ServerEvents extends EventEmitter {
+    constructor() {
+        super();
+    }
+
+
+}
 class AppUpdater {
   constructor() {
     log.transports.file.level = 'info';
@@ -33,6 +46,12 @@ class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 const serverUrl: string = 'http://127.0.0.1:5100';
+let serverProcess: ChildProcess;
+const serverEventEmitter = new ServerEvents();
+
+let serverState: "Application Activated" |
+    "Application Not Activated" | "Server Started" | "Checking Activation"
+    | "Server Starting" | "Server Stopping" = "Checking Activation";
 
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
@@ -147,6 +166,7 @@ const createWindow = async () => {
     height: 728,
     icon: getAssetPath('icon.png'),
     webPreferences: {
+      nodeIntegration: true,
       preload: app.isPackaged
         ? path.join(__dirname, 'preload.js')
         : path.join(__dirname, '../../.erb/dll/preload.js'),
@@ -200,17 +220,8 @@ app
   .whenReady()
   .then(() => {
     createWindow();
-    const nestServer = spawn('node', [
-      path.join(__dirname, '../server/main.js'),
-    ]);
-
-    nestServer.stdout.on('data', (data) => {
-      console.log(`Nest.js Server: ${data}`);
-    });
-
-    nestServer.stderr.on('data', (data) => {
-      console.error(`Nest.js Server Error: ${data}`);
-    });
+    // spawnServer();
+    startServer();
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.
@@ -218,3 +229,59 @@ app
     });
   })
   .catch(console.log);
+
+  export async function spawnServer() {
+    try {
+        serverEventEmitter.emit(SERVER_STATE_CHANGED, "Checking Activation")
+        //check if the app is activated. if it is, start the server. else go the activation page
+        const appActivated = await isAppActivated();
+        if (appActivated) {
+            serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Starting")
+
+            //spawn server->runmigrations
+            const serverPath = path.join(__dirname, 'server/server')
+            serverProcess = fork(serverPath)
+
+            serverProcess.on('exit', (code: number, signal) => {
+                logger.error({
+                    message: 'serverProcess process exited with ' +
+                        `code ${code} and signal ${signal}`
+                });
+                serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Stopped")
+            });
+            serverProcess.on('error', (error) => {
+                serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Error")
+                console.log('serverProcess process error ', error)
+            });
+
+            serverProcess.on('spawn', () => {
+                serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Running")
+                console.log('serverProcess spawned')
+                //TODO: check if the company details has been set. then check if the admin password has been set
+
+            });
+            serverProcess.on('disconnect', () => {
+                serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Disconnected")
+                console.log('serverProcess disconnected')
+                // spawnServer()
+            });
+
+            serverProcess.on('message', (message: any, handle: SendHandle) => {
+                console.log("serverProcess sent a message", message)
+
+                serverEventEmitter.emit(message.event, message.message)
+            });
+
+        }
+        else {
+            serverEventEmitter.emit(SERVER_STATE_CHANGED, "App not activated")
+            console.log("app not activated")
+            // loadActivationPage();
+        }
+    } catch (error) {
+        //start the server the old fashioned way
+        serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Error " + error)
+
+        console.log(error)
+    }
+}
