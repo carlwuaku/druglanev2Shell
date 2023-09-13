@@ -18,6 +18,7 @@ import { ChildProcess, fork, SendHandle, spawn } from 'child_process';
 import {
   ACTIVATION_RESULT,
   CALL_ACTIVATION,
+  GET_PREFERENCES,
   GET_SERVER_URL,
   SERVER_STATE_CHANGED,
   SERVER_URL_RECEIVED,
@@ -28,7 +29,10 @@ import { EventEmitter } from "stream";
 import { isAppActivated } from './server/config/appValidation';
 import { logger } from './utils/logger';
 import { startServer } from './server/server';
-
+import Store from "electron-store";
+import contextMenu from 'electron-context-menu'
+import { PORT } from './utils/stringKeys';
+import { constants } from './utils/constants';
 class ServerEvents extends EventEmitter {
     constructor() {
         super();
@@ -45,9 +49,14 @@ class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
-const serverUrl: string = 'http://127.0.0.1:5100';
+
 let serverProcess: ChildProcess;
 const serverEventEmitter = new ServerEvents();
+const store = new Store();
+const SERVER_PORT:any = store.get(PORT, constants.port);
+
+
+const serverUrl: string = `http://127.0.0.1:${SERVER_PORT}`;
 
 let serverState: "Application Activated" |
     "Application Not Activated" | "Server Started" | "Checking Activation"
@@ -98,6 +107,9 @@ function sendServerUrl() {
 // });
 
 ipcMain.on(GET_SERVER_URL, sendServerUrl);
+ipcMain.on(GET_PREFERENCES, (event) => {
+    store.openInEditor()
+})
 
 // ipcMain.on(GET_PREFERENCE, (event, data: { key: string }) => {
 //   let value = store.get(data.key, defaultOptions[data.key]);
@@ -221,7 +233,7 @@ app
   .then(() => {
     createWindow();
     // spawnServer();
-    startServer();
+    startServer(SERVER_PORT);
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.

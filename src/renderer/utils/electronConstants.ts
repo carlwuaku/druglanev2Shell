@@ -3,7 +3,6 @@
 import path from 'path';
 import os from 'os';
 
-const PORT = process.env.PORT || 5100;
 // const appName = "Shoplane";
 // const appLongName = "Shoplane POS & Inventory Management System";
 // const databaseName = "shoplane.db";
@@ -15,7 +14,7 @@ const databaseName = 'druglanev1.db';
 const appDirectory = 'druglaneServerV1';
 const settings_location: string = path.join(process.env.APPDATA!, appDirectory);
 export const defaultOptions: { [key: string]: any } = {
-  port: 5000,
+  Port: 5000,
   backup_time: 19,
 };
 export const constants = {
@@ -30,7 +29,7 @@ export const constants = {
 
   product_image_url: 'assets/product_images/',
   product_image_thumbnail_url: 'assets/product_images/thumbnails/',
-  port: PORT,
+  port: defaultOptions.Port,
 
   firebase_user_collection: 'users',
   firebase_requests_collection: 'requests',

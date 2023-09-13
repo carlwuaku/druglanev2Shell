@@ -21,7 +21,10 @@ import cors from 'cors';
 import Store from "electron-store";
 import bodyParser from 'body-parser';
 import path from 'path';
+import { Server as SocketServer } from "socket.io";
+
 import { hasPermission } from './utils/auth';
+import { bindSocketIOFunctions } from './utils/socketio';
 const store = new Store();
 
 
@@ -70,13 +73,15 @@ export function isValidInt(value: any): boolean {
 
 }
 
-app.use(cors());
+app.use(cors(
+  {
+    origin:"*"
+  }
+));
 app.use(bodyParser.json())
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ limit: '500mb' }));
 
-app.use('/client', express.static(path.join(__dirname, 'public/client')));
-app.use('/assets', express.static(path.join(__dirname, 'public/assets')));
 
 app.use('/', adminController);
 app.use('/api_admin', adminController);
@@ -87,6 +92,7 @@ app.use('/api_vendor', vendorController);
 app.use('/api_purchase', purchaseController);
 app.use('/api_sale', saleController);
 app.use('/api_transfer', transfersController);
+app.use(express.static(path.join(__dirname, 'public')));
 
 
 
@@ -151,15 +157,15 @@ app.use('/api_transfer', transfersController);
 
 // });
 let server: Server;
-const SERVER_PORT = store.get(PORT, constants.port);
-export const startServer = async () => {
+let serverUrl:string = "";
+export const startServer = async (port:any) => {
     //make sure the app has been activated
     console.log("starting server")
     try {
-        server = app.listen(SERVER_PORT, () => {
-            logger.info("server started successfully on " + SERVER_PORT);
+        server = app.listen(port, () => {
+            logger.info("server started successfully on " + port);
             const ipAddress = ip.address();
-            const serverUrl = `http://${ipAddress}:${SERVER_PORT}`;
+            serverUrl = `http://${ipAddress}:${port}`;
             if (process.send)
             process.send({ message: serverUrl, event: SERVER_URL_UPDATED });
             runMigrations()
@@ -178,7 +184,16 @@ process.send({message:SERVER_RUNNING, event: SERVER_STATE_CHANGED});
                 // console.log("process.send not defined")
                 logger.error({message: "process.send not defined."});
             }
+        });
+
+                const io = new SocketServer(server, {
+                  cors: {origin: '*'}
+                });
+        io.on("connection", (socket) =>{
+          console.log("sonnection")
         })
+        bindSocketIOFunctions(io);
+
     } catch (error) {
         if (process.send)
         process.send({ message: `Server encountered an error: ${error}`, event: SERVER_MESSAGE_RECEIVED });

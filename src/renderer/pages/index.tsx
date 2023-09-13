@@ -4,7 +4,6 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect, useContext } from 'react';
-
 import { Link, Link as RouterLink } from 'react-router-dom';
 import { useAuthUser } from 'react-auth-kit';
 import {
@@ -88,6 +87,7 @@ function Index() {
   useEffect(() => {
     const handleServerUrlReceived = async (event: any, data: any) => {
       const serverUrl = data;
+
       // get the settings
       const getSettings = await getData<any>({
         url: `${serverUrl}/api_admin/settings`,
