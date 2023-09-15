@@ -8,11 +8,10 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable import/no-duplicates */
 import { InputText } from 'primereact/inputtext';
-import { Button } from 'primereact/button';
+import Button from '@mui/material/Button';
 import React, { useEffect, useRef, useState } from 'react';
 import { useFormik, FormikErrors } from 'formik';
 import { Toast } from 'primereact/toast';
-import { useNavigate } from 'react-router-dom';
 import { classNames } from 'primereact/utils';
 import { useSignIn } from 'react-auth-kit';
 import { useAuthUser } from 'react-auth-kit';
@@ -20,6 +19,7 @@ import { GET_SERVER_URL, SERVER_URL_RECEIVED } from '../utils/stringKeys';
 import { postData } from '../utils/network';
 import Header from '../components/Header';
 import LocalImage from '../components/Image';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 export default function Login() {
   const auth = useAuthUser();
@@ -86,7 +86,7 @@ export default function Login() {
   });
 
   useEffect(() => {
-    const handleServerUrlReceived = async (event: any, data: any) => {
+    const handleServerUrlReceived = async ( data: any) => {
       serverUrl.current = data;
     };
     console.log("getting the server url")
@@ -165,12 +165,18 @@ export default function Login() {
                   </a>
                 </div>
 
-                <Button
-                  loading={loading}
-                  label="Sign In"
-                  icon="pi pi-user"
+                <Button type='submit'
+                variant="contained"
+                  color='primary'
                   className="w-full"
-                />
+                >Sign In</Button>
+                <Button
+            component={RouterLink}
+            to="/"
+            className="w-full"
+          >
+            Go Back Home
+          </Button>
               </div>
             </div>
           </div>

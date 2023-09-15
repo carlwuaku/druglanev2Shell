@@ -202,7 +202,7 @@ function AddUser() {
       showUpdatePassword.current = true;
     }
 
-    const handleServerUrlReceived = (event: any, data: any) => {
+    const handleServerUrlReceived = (data: any) => {
       serverUrl.current = data;
       loadRoles();
       loadPermissions();
@@ -391,7 +391,7 @@ function AddUser() {
                       {rolePermissions.length} of {allPermissions.length}{' '}
                       permissions available to this role.{' '}
                       {rolePermissions.map((permission) => (
-                        <span className="chip light-blue">
+                        <span key={permission.name} className="chip light-blue">
                           {permission.name}
                         </span>
                       ))}

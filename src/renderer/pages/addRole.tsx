@@ -147,7 +147,7 @@ function AddRole() {
   };
 
   useEffect(() => {
-    const handleServerUrlReceived = async (event: any, data: any) => {
+    const handleServerUrlReceived = async ( data: any) => {
       serverUrl.current = data;
       try {
         setLoadingPermissions(true);

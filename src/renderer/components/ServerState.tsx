@@ -27,7 +27,8 @@ function ServerState() {
 
 
     useEffect(() => {
-        const handleServerStateReceived = (event: any, data: any) => {
+        const handleServerStateReceived = (data: any) => {
+          console.log("sever state received", data)
             setLoading(false)
             setServerState(data.data)
         }
@@ -38,15 +39,13 @@ function ServerState() {
 
 
 
-        const handleServerUrlReceived = (event: any, data: any) => {
-            setServerUrl(data);
-            const socket = io(data);
-
-        }
 
         window.electron.ipcRenderer.send(GET_SERVER_URL);
 
-        window.electron.ipcRenderer.on(SERVER_URL_RECEIVED, handleServerUrlReceived);
+        window.electron.ipcRenderer.on(SERVER_URL_RECEIVED, ( data: any) => {
+            setServerUrl(data);
+
+        });
 
 
 

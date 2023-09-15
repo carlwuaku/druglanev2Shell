@@ -149,7 +149,7 @@ function LoadDataList(props: {
   useEffect(() => {
     window.electron.ipcRenderer.send(GET_SERVER_URL);
 
-    const handleServerUrlReceived = async (event: any, data: any) => {
+    const handleServerUrlReceived = async ( data: any) => {
       serverUrl.current = data;
       loadData();
     };

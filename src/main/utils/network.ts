@@ -1,7 +1,7 @@
-import { logger } from "@/app/config/logger";
 import axios, { AxiosHeaders, AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse } from 'axios'
 import { constants } from "./constants";
 import { useAuthUser } from 'react-auth-kit'
+import { logger } from './logger';
 
 /**
  * make a get call to a url with some optional params
@@ -111,12 +111,12 @@ export  async function sendEmail(message:string, recipient:string, subject:strin
     catch (error) {
         logger.info({ message: `error sending email : ${error}` })
         throw new Error(`Server error: ${error}`);
-        
+
     };
 }
 
 export function getAuthHeaders(token?:string): AxiosRequestConfig['headers'] {
-    
+
     const header: AxiosRequestConfig['headers'] = {
         'token': token,
         'Content-Type': 'application/json'

@@ -13,7 +13,7 @@ import { useFormik, FormikErrors } from 'formik';
 import ActivationFailed from '../components/ActivationFailed';
 import ActivationSuccess from '../components/ActivationSuccess';
 import Settings from '../components/settings';
-import { ACTIVATION_RESULT, CALL_ACTIVATION } from '../utils/stringKeys';
+import { ACTIVATION_RESULT, ADMIN_PASSWORD_SET, CALL_ACTIVATION, SETUP_FINISHED } from '../utils/stringKeys';
 import SetAdminPassword from '../components/SetAdminPassword';
 
 function Activate() {
@@ -62,7 +62,11 @@ function Activate() {
     setActiveIndex(2);
   };
 
-  const adminPasswordSet = (password: string) => {};
+  const adminPasswordSet = (password: string) => {
+    //send the call to activate the application
+          window.electron.ipcRenderer.send(SETUP_FINISHED);
+
+  };
 
   const formik = useFormik({
     initialValues: {
@@ -89,7 +93,7 @@ function Activate() {
   // }
 
   useEffect(() => {
-    window.electron.ipcRenderer.on(ACTIVATION_RESULT, (event, data) => {
+    window.electron.ipcRenderer.on(ACTIVATION_RESULT, ( data) => {
       setLoading(false);
 
       console.log(data.data);
@@ -133,9 +137,7 @@ function Activate() {
   return (
     <div className="flex flex-column gap-3 justify-content-center align-items-center ">
       <h2>Activate Your System</h2>
-      <Button>
-        <Link to="/">HOME</Link>
-      </Button>
+
       <TabView
         activeIndex={activeIndex}
         onTabChange={(e) => setActiveIndex(e.index)}

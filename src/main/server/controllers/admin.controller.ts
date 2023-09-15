@@ -153,7 +153,7 @@ router.get('/allPermissions', hasPermission, async (req: Request, res: Response)
     }
 });
 
-router.post('/saveSettings', hasPermission, async (req: Request, res: Response) => {
+router.post('/saveSettings',  async (req: Request, res: Response) => {
     try {
         console.log(req.body)
 

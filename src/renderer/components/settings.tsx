@@ -102,7 +102,7 @@ function Settings({ data, onSubmit }: { data: ISettings; onSubmit: Function }) {
     });
   };
   useEffect(() => {
-    const handleServerUrlReceived = async (event: any, data: any) => {
+    const handleServerUrlReceived = async ( data: any) => {
       setServerUrl(data);
     };
     window.electron.ipcRenderer.send(GET_SERVER_URL);

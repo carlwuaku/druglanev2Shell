@@ -44,7 +44,7 @@ function SettingsPage() {
   };
 
   useEffect(() => {
-    const handleServerUrlReceived = async (event: any, data: any) => {
+    const handleServerUrlReceived = async ( data: any) => {
       const serverUrl = data;
       const getSettings = await getData<any>({
         url: `${serverUrl}/api_admin/settings`,

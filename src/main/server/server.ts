@@ -7,7 +7,7 @@ import { constants } from './utils/constants'
 import { logger } from './config/logger';
 import { runMigrations } from './config/migrations/migrations';
 import { Settings } from './models/Settings';
-import { PORT, SERVER_MESSAGE_RECEIVED, SERVER_RUNNING, SERVER_STATE_CHANGED, SERVER_URL_UPDATED } from './utils/stringKeys'
+import { PORT, SERVER_ERROR, SERVER_MESSAGE_RECEIVED, SERVER_RUNNING, SERVER_STATE_CHANGED, SERVER_URL_UPDATED } from './utils/stringKeys'
 import adminController from './controllers/admin.controller';
 import customerController from './controllers/customer.controller';
 import productController from './controllers/product.controller';
@@ -25,12 +25,15 @@ import { Server as SocketServer } from "socket.io";
 
 import { hasPermission } from './utils/auth';
 import { bindSocketIOFunctions } from './utils/socketio';
+import EventEmitter from 'events';
+import { sequelize } from './config/sequelize-config';
 const store = new Store();
 
 
 dotenv.config();
 // console.log('erver')
 export const app: Express = express();
+const serverEmitter = new EventEmitter();
 
 /**
  * checks the database if the company details have been set
@@ -162,28 +165,18 @@ export const startServer = async (port:any) => {
     //make sure the app has been activated
     console.log("starting server")
     try {
-        server = app.listen(port, () => {
+        server = app.listen(port, async () => {
             logger.info("server started successfully on " + port);
             const ipAddress = ip.address();
             serverUrl = `http://${ipAddress}:${port}`;
-            if (process.send)
-            process.send({ message: serverUrl, event: SERVER_URL_UPDATED });
+            serverEmitter.emit(SERVER_STATE_CHANGED, SERVER_RUNNING);
+            serverEmitter.emit(SERVER_URL_UPDATED, serverUrl);
+
+
+            // if (process.send)
+            // process.send({ message: serverUrl, event: SERVER_URL_UPDATED });
             runMigrations()
-            try {
-                /**
-                 * If Node.js was not spawned with an IPC channel, process.send will be undefined
-                 */
-                if(process.send){
-process.send({message:SERVER_RUNNING, event: SERVER_STATE_CHANGED});
 
-
-                logger.info("process.send defined")
-                }
-
-            } catch (error) {
-                // console.log("process.send not defined")
-                logger.error({message: "process.send not defined."});
-            }
         });
 
                 const io = new SocketServer(server, {
@@ -195,13 +188,15 @@ process.send({message:SERVER_RUNNING, event: SERVER_STATE_CHANGED});
         bindSocketIOFunctions(io);
 
     } catch (error) {
-        if (process.send)
-        process.send({ message: `Server encountered an error: ${error}`, event: SERVER_MESSAGE_RECEIVED });
-        logger.error({ message: error });
-        // console.log(error)
+      serverEmitter.emit(SERVER_STATE_CHANGED, SERVER_ERROR)
+      logger.error({ message: error });
+        console.log('server startup',error)
+        throw error
     }
 
 }
+export const getServerEmitter = () => serverEmitter;
+
 
 const stopServer = async () => {
     //make sure the app has been activated
@@ -222,7 +217,22 @@ const stopServer = async () => {
     }
 
 }
+function parseDatabaseError(error:string) {
+  const errorRegex = /\(conn=(\d+),\s+no:\s+(\d+),\s+SQLState:\s+(\w+)\)\s+(.*)/;
+  const match = error.match(errorRegex);
 
+  if (match) {
+    const [ connectionId, errorCode, sqlState, errorMessage] = match;
+    return {
+      connectionId: parseInt(connectionId, 10),
+      errorCode: parseInt(errorCode, 10),
+      sqlState,
+      errorMessage,
+    };
+  } else {
+    return null; // Unable to parse the error message
+  }
+}
 // startServer();
 
 // /**

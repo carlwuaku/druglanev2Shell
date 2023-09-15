@@ -105,31 +105,27 @@ export async function server_admin_login_function(data: {  password: string; }):
         let settings = await Settings.findOne({
             where: {
                 name: "admin_password",
-            }
+            },
+            raw: true
         });
         let password_valid: boolean = false;
+
         if (settings && settings.value) {
             //username was found. compare the password
             password_valid = bcrypt.compareSync(password, settings.value);
         }
-
         if (!password_valid) {
-            throw new Error(errorMessages.PASSWORD_INCORRECT)
-
+            throw errorMessages.PASSWORD_INCORRECT;
         }
         //user is valid
 
         const now = new Date();
         const hash = bcrypt.hashSync(configKeys.ADMIN_PASSWORD_SALT + now, 10);
 
-        await Settings.update({
-            value: hash
-        }, {
-            where: {
-                name: 'admin_password_token'
-            }
-        })
-
+        now.setDate(now.getDate() + 3);
+        let session_obj = { user_id: 0, token: `${hash}`, expires: `${now.toDateString()}` }
+        console.log(session_obj)
+        await UserSessions.create(session_obj);
 
         Activities.create({
             activity: ` server admin ${infoMessages.LOGGED_IN}`,
@@ -152,7 +148,7 @@ export async function server_admin_login_function(data: {  password: string; }):
 
         }
         else {
-            throw new Error(error);
+            throw error;
 
         }
 

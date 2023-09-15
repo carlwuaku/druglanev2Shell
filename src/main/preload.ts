@@ -15,6 +15,7 @@ const electronHandler = {
     on(channel: any, func: (...args: any[]) => void) {
       const subscription = (_event: IpcRendererEvent, ...args: unknown[]) =>
         func(...args);
+        console.log(channel, subscription)
       ipcRenderer.on(channel, subscription);
 
       return () => {
