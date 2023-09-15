@@ -4,8 +4,7 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect, useContext } from 'react';
-
-import { Link, Link as RouterLink } from 'react-router-dom';
+import { Link, Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuthUser } from 'react-auth-kit';
 import {
   Backup,
@@ -41,8 +40,8 @@ import { getData } from '../utils/network';
 import AppConfig from '../components/AppConfig';
 import DashboardTile from '../components/DashboardTile';
 import SettingItem from '../components/SettingItem';
+import { ACTIVATION_STATE_RECEIVED, GET_ACTIVATION_STATE } from 'main/utils/stringKeys';
 // import logo from '@/app/assets/logo.png';
-
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
   ...theme.typography.body2,
@@ -80,14 +79,17 @@ const times = [
 
 function Index() {
   const auth = useAuthUser();
+  const navigate = useNavigate();
+
   const [companyName, setCompanyName] = useState('Company Name');
   const openPreferences = () => {
     window.electron.ipcRenderer.send(GET_PREFERENCES);
   };
 
   useEffect(() => {
-    const handleServerUrlReceived = async (event: any, data: any) => {
+    const handleServerUrlReceived = async (data: any) => {
       const serverUrl = data;
+
       // get the settings
       const getSettings = await getData<any>({
         url: `${serverUrl}/api_admin/settings`,
@@ -96,9 +98,21 @@ function Index() {
       setCompanyName(getSettings.data.company_name);
     };
 
+    const handleActivationStateReceived = async (data: any) => {
+      console.log('activation state', data)
+      if(!data){
+        //navigate to activation page
+        navigate('/activate')
+      }
+
+
+    };
+
     window.electron.ipcRenderer.send(GET_SERVER_URL);
+    window.electron.ipcRenderer.send(GET_ACTIVATION_STATE);
 
     window.electron.ipcRenderer.on(SERVER_URL_RECEIVED, handleServerUrlReceived);
+    window.electron.ipcRenderer.on(ACTIVATION_STATE_RECEIVED, handleActivationStateReceived);
   }, []);
 
   return (
@@ -111,10 +125,8 @@ function Index() {
         <h3>Druglane Management System</h3>
         <h4>Licensed to {companyName}</h4>
         <Grid container spacing={2}>
-          <Grid xs={12} md={8}>
+          <Grid xs={12} md={12}>
             <ServerState />
-          </Grid>
-          <Grid xs={6} md={4} lg={4}>
             <SettingItem
               key={BACKUP_TIME}
               description="Backup time"
@@ -123,6 +135,7 @@ function Index() {
               options={times}
             />
           </Grid>
+
         </Grid>
         <Grid container spacing={2}>
           <Grid lg={3} md={3} sm={6}>

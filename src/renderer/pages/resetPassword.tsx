@@ -88,7 +88,7 @@ export default function ResetPassword() {
   });
 
   useEffect(() => {
-    const handleServerUrlReceived = async (event: any, data: any) => {
+    const handleServerUrlReceived = async ( data: any) => {
       serverUrl.current = data;
     };
 

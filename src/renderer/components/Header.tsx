@@ -77,7 +77,6 @@ function Header({ showBackArrow }: { showBackArrow?: boolean }) {
             component={RouterLink}
             to="/"
             sx={{ my: 2, color: 'white', display: 'block' }}
-            onClick={logout}
             startIcon={<Home />}
           >
             Home/Menu

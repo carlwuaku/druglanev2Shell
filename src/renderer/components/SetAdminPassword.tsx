@@ -84,8 +84,8 @@ const toast = useRef<Toast>(null);
 
   useEffect(() => {
     window.electron.ipcRenderer.send(GET_SERVER_URL);
-    window.electron.ipcRenderer.on(SERVER_URL_RECEIVED, async (event: any, data: any) => {
-      setServerUrl(data.data);
+    window.electron.ipcRenderer.on(SERVER_URL_RECEIVED, async (data: any) => {
+      setServerUrl(data);
     });
   }, []);
 

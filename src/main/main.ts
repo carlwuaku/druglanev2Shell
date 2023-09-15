@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint global-require: off, no-console: off, promise/always-return: off */
 
@@ -10,19 +11,36 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
-import { spawn } from 'child_process';
+import { ChildProcess, fork, SendHandle, spawn } from 'child_process';
 import {
   ACTIVATION_RESULT,
   CALL_ACTIVATION,
+  GET_PREFERENCES,
   GET_SERVER_URL,
+  SERVER_STATE_CHANGED,
   SERVER_URL_RECEIVED,
+  SETUP_FINISHED,
 } from '../renderer/utils/stringKeys';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import { EventEmitter } from "stream";
+import { activateApplication, isAppActivated, setSecretKey, testConnection, verifyLicenseKey } from './server/config/appValidation';
+import { logger } from './utils/logger';
+import { startServer, getServerEmitter } from './server/server';
+import Store from "electron-store";
+import contextMenu from 'electron-context-menu'
+import { ACTIVATION_STATE_RECEIVED, GET_ACTIVATION_STATE, GET_APP_DETAILS, GET_SERVER_STATE, GET_SYSTEM_ERRORS, PORT, SERVER_MESSAGE_RECEIVED, SERVER_URL_UPDATED, SET_ADMIN_PASSWORD, SYSTEM_ERRORS_RECEIVED } from './utils/stringKeys';
+import { constants } from './utils/constants';
+class ServerEvents extends EventEmitter {
+    constructor() {
+        super();
+    }
 
+
+}
 class AppUpdater {
   constructor() {
     log.transports.file.level = 'info';
@@ -32,7 +50,41 @@ class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
-const serverUrl: string = 'http://127.0.0.1:5100';
+
+let serverProcess: ChildProcess;
+const serverEventEmitter = new ServerEvents();
+const store = new Store();
+const SERVER_PORT:any = store.get(PORT, constants.port);
+
+//activation things. use them once the activation is done.
+let secretKey:string = "";
+let activationData:any = "";
+
+
+
+let serverUrl: string = `http://127.0.0.1:${SERVER_PORT}`;
+let lastServerUrl: string = "";
+
+let appIsActivated:boolean =   isAppActivated();
+//test the database connection
+async function runTestDb(){
+try{
+  await testConnection();
+}
+catch(error:any){
+  log.error(error)
+  dialog.showErrorBox("Druglane: Error during startup","Unable to connect to the Database: "+error);
+  app.exit();
+}
+}
+
+runTestDb();
+
+const systemErrors:any[] = [];
+
+let serverState: "Application Activated" |
+    "Application Not Activated" | "Server Started" | "Checking Activation"
+    | "Server Starting" | "Server Stopping" | "Server Running"  = "Checking Activation";
 
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
@@ -40,22 +92,35 @@ ipcMain.on('ipc-example', async (event, arg) => {
   event.reply('ipc-example', msgTemplate('pong'));
 });
 
-// ipcMain.on(CALL_ACTIVATION, async (event, key) => {
-//   try {
-//     let data = await verifyLicenseKey(key);
-//     mainWindow?.webContents?.send(ACTIVATION_RESULT, {
-//       data: data.data,
-//       error: false,
-//       message: '',
-//     });
-//   } catch (error) {
-//     mainWindow?.webContents?.send(ACTIVATION_RESULT, {
-//       data: null,
-//       error: true,
-//       message: error,
-//     });
-//   }
-// });
+ipcMain.on(CALL_ACTIVATION, async (event, key) => {
+  try {
+    let response = await verifyLicenseKey(key);
+    if(response.data.status == "1"){
+      console.log("activation was good")
+      secretKey = response.data.secretKey;
+      response.data.data.company_id = response.data.data.id
+      activationData  = response.data.data;
+
+
+      startServer(SERVER_PORT)
+
+
+    }
+
+    event.reply(ACTIVATION_RESULT, {
+      data: response.data,
+      error: false,
+      message: '',
+    });
+  } catch (error:any) {
+    dialog.showErrorBox("Activation",`Error during server call: ${error.message}`)
+    event.reply(ACTIVATION_RESULT, {
+      data: null,
+      error: true,
+      message: error,
+    });
+  }
+});
 
 function sendServerUrl() {
   mainWindow?.webContents?.send(
@@ -65,10 +130,30 @@ function sendServerUrl() {
   );
 }
 
-// ipcMain.on(GET_APP_DETAILS, getAppDetails);
-// ipcMain.on(GET_SERVER_STATE, () => {
-//   sendServerState(serverState);
-// });
+function sendServerState(state: string) {
+    console.log('server state', state)
+    mainWindow?.webContents?.send(SERVER_STATE_CHANGED, { data: state, time: new Date().toLocaleString() })
+}
+
+function getAppDetails() {
+    const title = `${constants.appname} v${app.getVersion()}`
+    mainWindow?.webContents?.send("appDetailsSent", { title: title })
+}
+
+ipcMain.on(GET_APP_DETAILS, getAppDetails);
+
+ipcMain.on(GET_SERVER_STATE, (event, data: { key: string }) => {
+  event.reply(SERVER_STATE_CHANGED, { data: serverState, time: new Date().toLocaleString() })
+});
+
+ipcMain.on(GET_SYSTEM_ERRORS, (event, data: { key: string }) => {
+  event.reply(SYSTEM_ERRORS_RECEIVED, { data: systemErrors, time: new Date().toLocaleString() })
+});
+
+ipcMain.on(GET_ACTIVATION_STATE, (event, data: { key: string }) => {
+  console.log("sending activation state", appIsActivated)
+  event.reply(ACTIVATION_STATE_RECEIVED,  appIsActivated)
+});
 
 // ipcMain.on(RESTART_SERVER, async (event, data) => {
 //   await spawnServer();
@@ -78,7 +163,14 @@ function sendServerUrl() {
 //   restartApp();
 // });
 
-ipcMain.on(GET_SERVER_URL, sendServerUrl);
+ipcMain.on(GET_SERVER_URL, (event, data: { key: string }) => {
+  event.reply( SERVER_URL_RECEIVED,
+     serverUrl
+  )
+});
+ipcMain.on(GET_PREFERENCES, (event) => {
+    store.openInEditor()
+})
 
 // ipcMain.on(GET_PREFERENCE, (event, data: { key: string }) => {
 //   let value = store.get(data.key, defaultOptions[data.key]);
@@ -101,7 +193,18 @@ ipcMain.on(GET_SERVER_URL, sendServerUrl);
 //   }
 // });
 
-// ipcMain.on(SET_ADMIN_PASSWORD, (event, data: { password: string }) => {});
+ipcMain.on(SETUP_FINISHED, (event) => {
+  try{
+setSecretKey(secretKey);
+      activateApplication(activationData);
+      //restart the application
+       restartApp();
+  }
+  catch(error:any){
+    dialog.showErrorBox("Druglane:","An error occured during activation: "+error);
+  }
+
+});
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -147,6 +250,7 @@ const createWindow = async () => {
     height: 728,
     icon: getAssetPath('icon.png'),
     webPreferences: {
+      nodeIntegration: true,
       preload: app.isPackaged
         ? path.join(__dirname, 'preload.js')
         : path.join(__dirname, '../../.erb/dll/preload.js'),
@@ -198,19 +302,45 @@ app.on('window-all-closed', () => {
 
 app
   .whenReady()
-  .then(() => {
+  .then( () => {
     createWindow();
-    const nestServer = spawn('node', [
-      path.join(__dirname, '../server/main.js'),
-    ]);
+        if (appIsActivated) {
+          try{
 
-    nestServer.stdout.on('data', (data) => {
-      console.log(`Nest.js Server: ${data}`);
-    });
+    startServer(SERVER_PORT);
+    const serverEmitter = getServerEmitter();
 
-    nestServer.stderr.on('data', (data) => {
-      console.error(`Nest.js Server Error: ${data}`);
-    });
+    serverEmitter.on(SERVER_STATE_CHANGED, (data) => {
+      console.log('server state change emitted',data)
+    serverState = data;
+    sendServerState(data);
+})
+
+serverEmitter.on(SERVER_MESSAGE_RECEIVED, (data) => {
+  console.log('server message received emitted',data)
+  dialog.showErrorBox("System error", data)
+  if(mainWindow?.webContents){
+    mainWindow?.webContents?.send(SERVER_MESSAGE_RECEIVED, { data, time: new Date().toLocaleString() });
+  }
+  else{
+systemErrors.push(data)
+  }
+
+})
+serverEmitter.on(SERVER_URL_UPDATED, (data) => {
+  console.log('server url change emitted',data)
+    serverUrl = data;
+    if (lastServerUrl !== serverUrl) {
+        sendServerUrl();
+        lastServerUrl = serverUrl;
+    }
+
+});
+          }
+          catch(error:any){
+            dialog.showErrorBox("Starting Server", error)
+          }
+        }
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.
@@ -218,3 +348,65 @@ app
     });
   })
   .catch(console.log);
+
+  export async function spawnServer() {
+    try {
+
+        serverEventEmitter.emit(SERVER_STATE_CHANGED, "Checking Activation")
+        //check if the app is activated. if it is, start the server. else go the activation page
+        const appActivated = await isAppActivated();
+        if (appActivated) {
+            serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Starting")
+
+            //spawn server->runmigrations
+            const serverPath = path.join(__dirname, 'server/server')
+            serverProcess = fork(serverPath)
+
+            serverProcess.on('exit', (code: number, signal) => {
+                logger.error({
+                    message: 'serverProcess process exited with ' +
+                        `code ${code} and signal ${signal}`
+                });
+                serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Stopped")
+            });
+            serverProcess.on('error', (error) => {
+                serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Error")
+                console.log('serverProcess process error ', error)
+            });
+
+            serverProcess.on('spawn', () => {
+                serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Running")
+                console.log('serverProcess spawned')
+                //TODO: check if the company details has been set. then check if the admin password has been set
+
+            });
+            serverProcess.on('disconnect', () => {
+                serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Disconnected")
+                console.log('serverProcess disconnected')
+                // spawnServer()
+            });
+
+            serverProcess.on('message', (message: any, handle: SendHandle) => {
+                console.log("serverProcess sent a message", message)
+
+                serverEventEmitter.emit(message.event, message.message)
+            });
+
+        }
+        else {
+            serverEventEmitter.emit(SERVER_STATE_CHANGED, "App not activated")
+            console.log("app not activated")
+            // loadActivationPage();
+        }
+    } catch (error) {
+        //start the server the old fashioned way
+        serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Error " + error)
+
+        console.log(error)
+    }
+}
+
+function restartApp() {
+    app.relaunch()
+    app.exit()
+}

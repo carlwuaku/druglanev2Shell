@@ -8,6 +8,7 @@ import React, { useEffect, useState } from "react";
 import Hub from '@mui/icons-material/Hub';
 import { Link } from "react-router-dom";
 import { COMPANY_NAME_RECEIVED, GET_SERVER_STATE, GET_SERVER_URL, RESTART_SERVER, SERVER_MESSAGE_RECEIVED, SERVER_RUNNING, SERVER_STARTING, SERVER_STATE_CHANGED, SERVER_STOPPED, SERVER_URL_RECEIVED } from "../utils/stringKeys";
+import { io } from 'socket.io-client';
 
 function ServerState() {
    const [loading, setLoading] = useState(false);
@@ -26,7 +27,8 @@ function ServerState() {
 
 
     useEffect(() => {
-        const handleServerStateReceived = (event: any, data: any) => {
+        const handleServerStateReceived = (data: any) => {
+          console.log("sever state received", data)
             setLoading(false)
             setServerState(data.data)
         }
@@ -37,13 +39,13 @@ function ServerState() {
 
 
 
-        const handleServerUrlReceived = (event: any, data: any) => {
-            setServerUrl(data);
-        }
 
         window.electron.ipcRenderer.send(GET_SERVER_URL);
 
-        window.electron.ipcRenderer.on(SERVER_URL_RECEIVED, handleServerUrlReceived);
+        window.electron.ipcRenderer.on(SERVER_URL_RECEIVED, ( data: any) => {
+            setServerUrl(data);
+
+        });
 
 
 

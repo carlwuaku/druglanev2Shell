@@ -30,6 +30,7 @@ import Roles from './pages/roles';
 import SetAdminPasswordPage from './pages/setAdminPasswordPage';
 import SettingsPage from './pages/settings';
 import Users from './pages/users';
+import { io } from 'socket.io-client';
 
 function Hello() {
   return (

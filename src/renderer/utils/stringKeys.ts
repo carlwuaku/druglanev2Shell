@@ -27,3 +27,5 @@ export const PORT = 'Port';
 export const BACKUP_TIME = 'Backup Time';
 export const SET_ADMIN_PASSWORD = 'set_admin_password';
 export const ADMIN_PASSWORD_SET = 'admin_password_set';
+export const SETUP_FINISHED = 'setup_finished';
+export const ACTIVATION_COMPLETED = 'activation_completed'
