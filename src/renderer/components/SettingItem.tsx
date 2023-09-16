@@ -108,13 +108,11 @@ function SettingItem(props: {
       case 'select':
         return (
           <>
-            <InputLabel id="demo-simple-select-standard-label">Age</InputLabel>
             <Select
               labelId="demo-simple-select-standard-label"
               id="demo-simple-select-standard"
               value={new_value}
               onChange={(e: SelectChangeEvent) => setValue(e.target.value)}
-              label="Age"
             >
               {props.options?.map((option, i) => (
                 <MenuItem key={i} value={option.value}>
@@ -160,10 +158,7 @@ function SettingItem(props: {
 
   return (
     <>
-      <Card key={props.name}>
-        <CardHeader
-          title={props.name}
-          action={
+
             <IconButton
               onClick={handleClickOpen}
               color="secondary"
@@ -172,10 +167,8 @@ function SettingItem(props: {
             >
               <Edit />
             </IconButton>
-          }
-          subheader={currentValue}
-         />
-      </Card>
+
+
       <Toast ref={toast} />
 
       <Dialog open={open} onClose={handleClose}>
