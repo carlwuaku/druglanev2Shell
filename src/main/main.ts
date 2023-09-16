@@ -17,12 +17,16 @@ import log from 'electron-log';
 import { ChildProcess, fork, SendHandle, spawn } from 'child_process';
 import {
   ACTIVATION_RESULT,
+  BACKUP_COMPLETE,
   CALL_ACTIVATION,
   GET_PREFERENCES,
   GET_SERVER_URL,
+  OPEN_BACKUPS_FOLDER,
+  OPEN_LOGS_FOLDER,
   SERVER_STATE_CHANGED,
   SERVER_URL_RECEIVED,
   SETUP_FINISHED,
+  START_BACKUP,
 } from '../renderer/utils/stringKeys';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
@@ -34,6 +38,12 @@ import Store from "electron-store";
 import contextMenu from 'electron-context-menu'
 import { ACTIVATION_STATE_RECEIVED, GET_ACTIVATION_STATE, GET_APP_DETAILS, GET_SERVER_STATE, GET_SYSTEM_ERRORS, PORT, SERVER_MESSAGE_RECEIVED, SERVER_URL_UPDATED, SET_ADMIN_PASSWORD, SYSTEM_ERRORS_RECEIVED } from './utils/stringKeys';
 import { constants } from './utils/constants';
+import { runBackup } from './utils/backup';
+
+
+
+import { checkDatabaseExists, createDatabase } from './server/config/dbSetup';
+import { config } from './server/config/config';
 class ServerEvents extends EventEmitter {
     constructor() {
         super();
@@ -65,20 +75,32 @@ let activationData:any = "";
 let serverUrl: string = `http://127.0.0.1:${SERVER_PORT}`;
 let lastServerUrl: string = "";
 
-let appIsActivated:boolean =   isAppActivated();
+let appIsActivated:boolean =  false;
 //test the database connection
 async function runTestDb(){
 try{
+  const databaseExists = await checkDatabaseExists();
+  if (!databaseExists) {
+     await createDatabase();
+     //the activation and db creation should ideally happen on the first startup. but just to be
+     //safe
+     appIsActivated = false;
+    } else {
+      appIsActivated = isAppActivated();
+      console.log('Database already exists. Skipping creation.');
+    }
   await testConnection();
 }
 catch(error:any){
+  const dbConfig = config[process.env.NODE_ENV!];
   log.error(error)
-  dialog.showErrorBox("Druglane: Error during startup","Unable to connect to the Database: "+error);
+  dialog.showErrorBox("Druglane: Error during startup",`Unable to connect to the Database: ${error}.
+   Please make sure MariaDB is installed and running on port ${dbConfig.port}`);
   app.exit();
 }
 }
 
-runTestDb();
+
 
 const systemErrors:any[] = [];
 
@@ -91,6 +113,19 @@ ipcMain.on('ipc-example', async (event, arg) => {
   console.log(msgTemplate(arg));
   event.reply('ipc-example', msgTemplate('pong'));
 });
+
+const runBackupListener = (event:Electron.IpcMainEvent, arg:any) =>{
+  try {
+     runBackup();
+  dialog.showMessageBox(mainWindow!,{
+    message:"Backup was successful"
+  })
+  } catch (error) {
+    dialog.showErrorBox("Druglane Backup",`An error occured during backup: ${error}`)
+  }
+}
+
+ipcMain.on(START_BACKUP, runBackupListener);
 
 ipcMain.on(CALL_ACTIVATION, async (event, key) => {
   try {
@@ -121,6 +156,13 @@ ipcMain.on(CALL_ACTIVATION, async (event, key) => {
     });
   }
 });
+
+ipcMain.on(OPEN_BACKUPS_FOLDER, (event, data) => {
+    shell.showItemInFolder(constants.internal_backups_path)
+  })
+  ipcMain.on(OPEN_LOGS_FOLDER, (event, data) => {
+    shell.showItemInFolder(path.join(constants.settings_location,'logs'))
+  })
 
 function sendServerUrl() {
   mainWindow?.webContents?.send(
@@ -302,8 +344,10 @@ app.on('window-all-closed', () => {
 
 app
   .whenReady()
-  .then( () => {
+  .then( async () => {
     createWindow();
+    await runTestDb();
+    console.log('appisactivated', appIsActivated)
         if (appIsActivated) {
           try{
 
@@ -349,62 +393,62 @@ serverEmitter.on(SERVER_URL_UPDATED, (data) => {
   })
   .catch(console.log);
 
-  export async function spawnServer() {
-    try {
+//   export async function spawnServer() {
+//     try {
 
-        serverEventEmitter.emit(SERVER_STATE_CHANGED, "Checking Activation")
-        //check if the app is activated. if it is, start the server. else go the activation page
-        const appActivated = await isAppActivated();
-        if (appActivated) {
-            serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Starting")
+//         serverEventEmitter.emit(SERVER_STATE_CHANGED, "Checking Activation")
+//         //check if the app is activated. if it is, start the server. else go the activation page
+//         const appActivated = await isAppActivated();
+//         if (appActivated) {
+//             serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Starting")
 
-            //spawn server->runmigrations
-            const serverPath = path.join(__dirname, 'server/server')
-            serverProcess = fork(serverPath)
+//             //spawn server->runmigrations
+//             const serverPath = path.join(__dirname, 'server/server')
+//             serverProcess = fork(serverPath)
 
-            serverProcess.on('exit', (code: number, signal) => {
-                logger.error({
-                    message: 'serverProcess process exited with ' +
-                        `code ${code} and signal ${signal}`
-                });
-                serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Stopped")
-            });
-            serverProcess.on('error', (error) => {
-                serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Error")
-                console.log('serverProcess process error ', error)
-            });
+//             serverProcess.on('exit', (code: number, signal) => {
+//                 logger.error({
+//                     message: 'serverProcess process exited with ' +
+//                         `code ${code} and signal ${signal}`
+//                 });
+//                 serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Stopped")
+//             });
+//             serverProcess.on('error', (error) => {
+//                 serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Error")
+//                 console.log('serverProcess process error ', error)
+//             });
 
-            serverProcess.on('spawn', () => {
-                serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Running")
-                console.log('serverProcess spawned')
-                //TODO: check if the company details has been set. then check if the admin password has been set
+//             serverProcess.on('spawn', () => {
+//                 serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Running")
+//                 console.log('serverProcess spawned')
+//                 //TODO: check if the company details has been set. then check if the admin password has been set
 
-            });
-            serverProcess.on('disconnect', () => {
-                serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Disconnected")
-                console.log('serverProcess disconnected')
-                // spawnServer()
-            });
+//             });
+//             serverProcess.on('disconnect', () => {
+//                 serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Disconnected")
+//                 console.log('serverProcess disconnected')
+//                 // spawnServer()
+//             });
 
-            serverProcess.on('message', (message: any, handle: SendHandle) => {
-                console.log("serverProcess sent a message", message)
+//             serverProcess.on('message', (message: any, handle: SendHandle) => {
+//                 console.log("serverProcess sent a message", message)
 
-                serverEventEmitter.emit(message.event, message.message)
-            });
+//                 serverEventEmitter.emit(message.event, message.message)
+//             });
 
-        }
-        else {
-            serverEventEmitter.emit(SERVER_STATE_CHANGED, "App not activated")
-            console.log("app not activated")
-            // loadActivationPage();
-        }
-    } catch (error) {
-        //start the server the old fashioned way
-        serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Error " + error)
+//         }
+//         else {
+//             serverEventEmitter.emit(SERVER_STATE_CHANGED, "App not activated")
+//             console.log("app not activated")
+//             // loadActivationPage();
+//         }
+//     } catch (error) {
+//         //start the server the old fashioned way
+//         serverEventEmitter.emit(SERVER_STATE_CHANGED, "Server Error " + error)
 
-        console.log(error)
-    }
-}
+//         console.log(error)
+//     }
+// }
 
 function restartApp() {
     app.relaunch()

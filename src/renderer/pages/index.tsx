@@ -11,16 +11,29 @@ import {
   CloudDownload,
   CloudSync,
   DisplaySettings,
+  ExpandLess,
+  ExpandMore,
   LockPerson,
   NotificationsOutlined,
   Person2Outlined,
   Settings,
+  StarBorder,
 } from '@mui/icons-material';
 import {
+  Avatar,
   Button,
   Card,
   CardContent,
   CardHeader,
+  Collapse,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemButton,
+  ListItemIcon,
+  ListItemSecondaryAction,
+  ListItemText,
+  ListSubheader,
   Typography,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
@@ -32,7 +45,10 @@ import {
   BACKUP_TIME,
   GET_PREFERENCES,
   GET_SERVER_URL,
+  OPEN_BACKUPS_FOLDER,
+  OPEN_LOGS_FOLDER,
   SERVER_URL_RECEIVED,
+  START_BACKUP,
 } from '../utils/stringKeys';
 import ServerState from '../components/ServerState';
 import ServerLogs from '../components/ServerLogs';
@@ -41,6 +57,9 @@ import AppConfig from '../components/AppConfig';
 import DashboardTile from '../components/DashboardTile';
 import SettingItem from '../components/SettingItem';
 import { ACTIVATION_STATE_RECEIVED, GET_ACTIVATION_STATE } from 'main/utils/stringKeys';
+import DiscFullIcon from '@mui/icons-material/DiscFull';
+import StorageIcon from '@mui/icons-material/Storage';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 // import logo from '@/app/assets/logo.png';
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -85,6 +104,18 @@ function Index() {
   const openPreferences = () => {
     window.electron.ipcRenderer.send(GET_PREFERENCES);
   };
+  const runBackup = () => {
+    window.electron.ipcRenderer.send(START_BACKUP);
+  }
+
+  const goToLogs = () => {
+    window.electron.ipcRenderer.send(OPEN_LOGS_FOLDER);
+  }
+
+  const goToBackups = () => {
+    window.electron.ipcRenderer.send(OPEN_BACKUPS_FOLDER);
+  }
+
 
   useEffect(() => {
     const handleServerUrlReceived = async (data: any) => {
@@ -115,6 +146,8 @@ function Index() {
     window.electron.ipcRenderer.on(ACTIVATION_STATE_RECEIVED, handleActivationStateReceived);
   }, []);
 
+
+
   return (
     <>
       <Header />
@@ -125,21 +158,65 @@ function Index() {
         <h3>Druglane Management System</h3>
         <h4>Licensed to {companyName}</h4>
         <Grid container spacing={2}>
-          <Grid xs={12} md={12}>
+          <Grid xs={12} md={8}>
             <ServerState />
-            <SettingItem
+
+          </Grid>
+          <Grid  xs={12} md={4} >
+      <Card>
+        <CardContent>
+           <List
+    className='margin-top-8'
+      sx={{ width: '100%', maxWidth: 360, bgcolor: 'background.paper' }}
+      component="nav"
+      aria-labelledby="nested-list-subheader"
+      subheader={
+        <ListSubheader component="div" id="nested-list-subheader">
+          System Shortcuts
+        </ListSubheader>
+      }
+    >
+
+            <ListItemButton key={'backup_time'} color='primary'>
+        <ListItemIcon>
+          <AccessTimeIcon />
+        </ListItemIcon>
+        <ListItemText primary="Change Auto Backup Time" />
+        <ListItemSecondaryAction>
+          <SettingItem
               key={BACKUP_TIME}
               description="Backup time"
               name={BACKUP_TIME}
               type="select"
               options={times}
-            />
-          </Grid>
 
+            />
+        </ListItemSecondaryAction>
+      </ListItemButton>
+      <ListItemButton key={'backups'} color='primary' onClick={goToBackups}>
+        <ListItemIcon>
+          <StorageIcon />
+        </ListItemIcon>
+        <ListItemText primary="Open Backups Folder" />
+      </ListItemButton>
+      <ListItemButton key={'logs'}  color='primary'  onClick={goToLogs}>
+        <ListItemIcon>
+          <DiscFullIcon />
+        </ListItemIcon>
+        <ListItemText primary="View System Logs" />
+      </ListItemButton>
+
+    </List>
+        </CardContent>
+      </Card>
+
+
+
+          </Grid>
         </Grid>
         <Grid container spacing={2}>
           <Grid lg={3} md={3} sm={6}>
-            <Link to="" className="unsetAll link ">
+            <Link onClick={runBackup} to="" className="unsetAll link ">
               <DashboardTile
                 title="Backup your database now"
                 subtitle="Create a backup file of your database"

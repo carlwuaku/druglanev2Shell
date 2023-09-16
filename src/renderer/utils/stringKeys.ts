@@ -29,3 +29,8 @@ export const SET_ADMIN_PASSWORD = 'set_admin_password';
 export const ADMIN_PASSWORD_SET = 'admin_password_set';
 export const SETUP_FINISHED = 'setup_finished';
 export const ACTIVATION_COMPLETED = 'activation_completed'
+export const START_BACKUP = 'start_backup';
+export const BACKUP_COMPLETE = 'backup_complete';
+export const OPEN_BACKUPS_FOLDER = 'open_backups_folder';
+export const OPEN_LOGS_FOLDER = 'open_logs_folder';
+

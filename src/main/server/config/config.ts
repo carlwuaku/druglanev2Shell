@@ -31,16 +31,17 @@ export const config: { [key: string]: any } = {
         host: "127.0.0.1",
         dialect: "mariadb",
         username: "root",
-        password: "r00t",
-        database: "dev",
+        password: "r00t1",
+        database: "druglaneDev",
         logging: (msg: any) => logger.debug(msg),
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        port: 3307
     },
     "test": {
         host: "127.0.0.1",
         dialect: "mariadb",
         username: "root",
-        password: "r00t",
+        password: "r00t1",
         database: "test",
         "logging": false,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
