@@ -26,6 +26,10 @@ import { IncomingPayments } from '../models/IncomingPayments';
 import { logger } from './logger';
 import { flattenNestedProperties, formatDateTime } from '../helpers/salesHelper';
 import { flattenNestedUserProperties } from '../helpers/userHelper';
+import { Transactions } from '../models/Transactions';
+import { TransactionDetails } from '../models/TransactionDetails';
+import { TransactionPayments } from '../models/TransactionPayments';
+import { TransactionMetadata } from '../models/TransactionMetadata';
 // const databaseNames: { [key:string]:string} = {test:'test', development: 'dev'}
 /**
  * SequelizeConnectionError: This error is thrown if Sequelize is unable to establish a connection to the database. This could be due to various reasons such as an incorrect database name, hostname, port, or authentication credentials.
@@ -41,7 +45,7 @@ SequelizeConnectionTimedOutError: This error is thrown if the connection times o
 SequelizeConnectionAcquireTimeoutError: This error is thrown if Sequelize is unable to acquire a connection from the pool within the specified timeout period. This could be due to a high load on the database server or a misconfiguration of the connection pool.
 
 SequelizeInvalidConnectionError: This error is thrown if the connection parameters provided are invalid. This could be due to a typo in the connection string or an incorrect configuration of the database server.
-Unable to connect to the database:  ConnectionError [SequelizeConnectionError]: (conn=32, no: 1049, SQLState: 42000) Unknown database 'test' 
+Unable to connect to the database:  ConnectionError [SequelizeConnectionError]: (conn=32, no: 1049, SQLState: 42000) Unknown database 'test'
 code: 'ER_BAD_DB_ERROR'
 SequelizeDatabaseError: (conn=60, no: 1046, SQLState: 3D000) No database selected
 */
@@ -55,7 +59,7 @@ export async function authenticate():Promise<boolean> {
     } catch (error: any) {
         logger.error({ message: error });
         throw new Error(error);
-        
+
     }
 }
 
@@ -76,7 +80,7 @@ Roles.hasMany(Users, {
 })
 
 Customers.hasMany(CustomerDiagnostics, {
-    foreignKey: 'customer', 
+    foreignKey: 'customer',
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE'
 })
@@ -373,6 +377,35 @@ SalesDetails.addHook('afterFind', (results) => {
     }
 });
 
+Transactions.addHook('afterFind', (results) => {
+    if (Array.isArray(results)) {
+        results.forEach((result) => {
+            flattenNestedProperties(result);
+        });
+    } else {
+        flattenNestedProperties(results);
+    }
+});
+TransactionDetails.addHook('afterFind', (results) => {
+    if (Array.isArray(results)) {
+        results.forEach((result) => {
+            formatDateTime(result);
+        });
+    } else {
+        formatDateTime(results);
+    }
+});
+
+TransactionPayments.addHook('afterFind', (results) => {
+    if (Array.isArray(results)) {
+        results.forEach((result) => {
+            formatDateTime(result);
+        });
+    } else {
+        formatDateTime(results);
+    }
+});
+
 Users.addHook('afterFind', (results) => {
     if (Array.isArray(results)) {
         results.forEach((result) => {
@@ -384,7 +417,86 @@ Users.addHook('afterFind', (results) => {
 });
 
 
+Transactions.belongsTo(Customers, {
+    foreignKey: 'customer'
+});
 
+Products.hasMany(TransactionDetails, {
+    foreignKey: 'product',
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE'
+})
+TransactionDetails.belongsTo(Products, {
+    foreignKey: 'product'
+});
+
+Transactions.hasMany(TransactionDetails, {
+    foreignKey: 'code',
+    sourceKey: 'code',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+    as: TransactionDetails.tableName
+});
+TransactionDetails.belongsTo(Transactions, {
+    foreignKey: 'code',
+    targetKey: 'code',
+    as: Transactions.tableName
+});
+
+Customers.hasMany(Transactions, {
+    foreignKey: 'customer',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+});
+Transactions.belongsTo(Customers, {
+    foreignKey: 'customer'
+});
+
+
+Users.hasMany(Transactions, {
+    foreignKey: 'created_by',
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE'
+});
+Transactions.belongsTo(Users, {
+    foreignKey: 'created_by'
+});
+
+Users.hasMany(TransactionDetails, {
+    foreignKey: 'created_by',
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE'
+});
+TransactionDetails.belongsTo(Users, {
+    foreignKey: 'created_by'
+});
+
+Transactions.hasMany(TransactionPayments, {
+    foreignKey: 'code',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+});
+TransactionPayments.belongsTo(Transactions, {
+    foreignKey: 'code'
+});
+
+Transactions.hasMany(TransactionMetadata, {
+    foreignKey: 'code',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+});
+TransactionMetadata.belongsTo(Transactions, {
+    foreignKey: 'code'
+});
+
+
+//transaction has many payments
+/**transactionpayment belong to  transactions
+ * transaction has many meta data
+ * metadata belongs to transaction
+ *
+ * transactions belong to
+ */
 
 
 

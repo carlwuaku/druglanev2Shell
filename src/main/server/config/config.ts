@@ -35,7 +35,8 @@ export const config: { [key: string]: any } = {
         database: "druglaneDev",
         logging: (msg: any) => logger.debug(msg),
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        port: 3307
+        port: 3307,
+        dialectModule: require('mariadb'),
     },
     "test": {
         host: "127.0.0.1",
@@ -59,6 +60,7 @@ export const config: { [key: string]: any } = {
         password: "r00t",
         database: "druglane",
         logging: (msg: any) => logger.debug(msg),
+        dialectModule: require('mariadb'),
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
 
     }
