@@ -14,28 +14,28 @@ const settings_location:string =  path.join(process.env.APPDATA!, appDirectory);
 export const constants = {
   appLongName : appLongName,
      appname : appName,
-     server_url : process.env.NODE_ENV == "production" ? 
+     server_url : process.env.NODE_ENV == "production" ?
      "https://druglanepms.calgadsoftwares.com": "http://localhost/druglanebackend",
      settings_location,
      customer_image_url : "assets/customer_images/",
      customer_image_thumbnail_url : "assets/customer_images/thumbnails/",
-         
+
      product_image_url : "assets/product_images/",
      product_image_thumbnail_url : "assets/product_images/thumbnails/",
-     port : PORT, 
-    
-     
+     port : PORT,
+
+
      firebase_user_collection : "users",
      firebase_requests_collection : "requests",
      firebase_responses_collection : "responses",
-     
+
      settings_path :path.join( settings_location,'system-settings.json'),
      db_path : path.join( settings_location, databaseName),
      backup_folder : path.join(os.homedir(), `${appName}Backups`),
      settings_filename : 'system-settings.json',
      db_filename : databaseName,
      internal_backups_path :path.join( settings_location,'backups'),
-  backup_temp_location : path.join(settings_location, 'backupRestoreTemp'),   
+  backup_temp_location : path.join(settings_location, 'backupRestoreTemp'),
   company_id: '',
      default_functional_groups : [
        "Adult Analgesics Tablets",
@@ -58,7 +58,7 @@ export const constants = {
        "Adult Multivitamins",
        "Paediatric Blood Tonics",
        "Paediatric Multivitamins"
-     
+
      ],
      default_config : {
        port: PORT,
@@ -70,8 +70,8 @@ export const constants = {
        last_sync: 0,
        env: "production"
      },
-     
-     PERMISSION_VIEW_USER_ACTIVITIES : "View Sales History",
+
+     PERMISSION_VIEW_USER_ACTIVITIES : "View User Activity",
      PERMISSION_VIEW_PURCHASE_HISTORY : "View Purchase History",
      PERMISSION_VIEW_INVENTORY : "View Inventory",
      PERMISSION_VIEW_END_OF_DAY_REPORT : "View End Of Day Report",
@@ -97,6 +97,6 @@ export const constants = {
      PERMISSION_VIEW_SALES_REPORTS : "View Sales Reports",
   PERMISSION_VIEW_SALES_HISTORY: "View Sales History",
   STRING_DB_VERSION:"dbversion",
-   
-     
+
+
      }

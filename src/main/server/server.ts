@@ -87,14 +87,15 @@ app.use(express.urlencoded({ limit: '500mb' }));
 
 
 app.use('/', adminController);
+app.use('/admin', adminController);
 app.use('/api_admin', adminController);
-app.use('/api_staff', usersController);
-app.use('/api_customer', customerController);
-app.use('/api_product', productController);
-app.use('/api_vendor', vendorController);
-app.use('/api_purchase', purchaseController);
-app.use('/api_sale', saleController);
-app.use('/api_transfer', transfersController);
+app.use('/staff', usersController);
+app.use('/customer', customerController);
+app.use('/product', productController);
+app.use('/vendor', vendorController);
+app.use('/purchase', purchaseController);
+app.use('/sale', saleController);
+app.use('/transfer', transfersController);
 app.use(express.static(path.join(__dirname, 'public')));
 
 

@@ -81,9 +81,9 @@ export async function getData<T>(data: {
       message: `response received: ${JSON.stringify(response.data)}`,
     });
     return response;
-  } catch (error) {
+  } catch (error:any) {
     logger.info({ message: `error in receiving : ${error}` });
-    throw new Error(`Server error: ${error}`);
+    throw new Error(`Server error: ${error.response.data.message}`);
   }
 }
 
@@ -106,9 +106,9 @@ export async function postData<T>(data: {
     });
 
     return response;
-  } catch (error) {
+  } catch (error:any) {
     logger.info({ message: `error in receiving : ${error}` });
-    throw new Error(`Server error: ${error}`);
+    throw new Error(`Server error: ${error.response.data.message}`);
   }
 }
 
@@ -126,9 +126,9 @@ export async function deleteData<T>(data: {
     });
 
     return response;
-  } catch (error) {
+  } catch (error:any) {
     logger.info({ message: `error in receiving : ${error}` });
-    throw new Error(`Server error: ${error}`);
+    throw new Error(`Server error: ${error.response.data.message}`);
   }
 }
 

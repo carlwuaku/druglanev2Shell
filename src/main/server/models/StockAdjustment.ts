@@ -15,7 +15,7 @@ import { Users } from "./Users";
     autoIncrement: true
   })
   id!: number;
-  
+
   @Index
   @Column({
     type: DataType.DATEONLY,
@@ -25,7 +25,7 @@ import { Users } from "./Users";
   })
   date!: string;
 
-  
+
   @ForeignKey(() => Products)
   @Column({
     type: DataType.INTEGER,
@@ -56,7 +56,7 @@ import { Users } from "./Users";
   })
   quantity_expected!: number;
 
-  
+
   @Column({
     type: DataType.DOUBLE,
     allowNull: false,
@@ -124,8 +124,17 @@ import { Users } from "./Users";
 
   @Column
   unit!: string;
-  
- 
+
+  @Index
+  @Column({
+    type: DataType.DOUBLE,
+    defaultValue: 0,
+    validate: {
+      isNumeric: true
+    }
+  })
+  cost_price!: number;
+
 }
 
 

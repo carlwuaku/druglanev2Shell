@@ -79,7 +79,7 @@ export default function Login() {
         }
 
       } catch (error) {
-        showError(`error occurred: ${error}`);
+        showError(`${error}`);
         setLoading(false);
       }
     },

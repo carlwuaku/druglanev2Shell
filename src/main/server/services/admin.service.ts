@@ -21,6 +21,7 @@ import { SettingsTransfer } from '../interfaces/settingsTransferInterface';
 import crypto from 'crypto'
 import { Tokens } from '../models/Tokens';
 import { sendEmail } from '../utils/network'
+import { sequelize } from '../config/sequelize-config';
 
 // const path = require('path')
 
@@ -49,7 +50,8 @@ export async function login_function(data: { username: any; password: any; }): P
             where: {
                 username: username,
             },
-            include: [Roles]
+            include: [Roles],
+            raw: true
         });
         let password_valid: boolean = false;
         if (user && user.password_hash) {
@@ -71,9 +73,18 @@ export async function login_function(data: { username: any; password: any; }): P
 
         user.token = hash;
         user.role = user.role_id;
-        // user.permissions = await helper.getRolePermissions(user.role_id, 'strings');
+        const permissions = await Permissions.findAll({
+          where:{
+            permission_id: sequelize.literal(`(permission_id in (select permission_id from ${RolePermissions.tableName} where role_id = '${user.role_id}'))`)
+          },
+          raw: true
+        });
+        const userPermissions:string[] = [];
+        permissions.forEach(permission => {
+          userPermissions.push(permission.name)
+        })
         // let settings = await Settings.findAll();
-
+        user.permissions = userPermissions;
 
         user.type = "staff";
          Activities.create({
@@ -81,16 +92,16 @@ export async function login_function(data: { username: any; password: any; }): P
             user_id: user.id,
             module: 'System'
         })
-
+        console.log(user)
         return user;
     } catch (error: any) {
         //if the error is "user not found", rethrow it. else if it's some other error, log it
         if (error instanceof Error) {
             logger.error({message:error})
-            throw new Error(error.message)
+            throw error.message
         }
         else {
-            throw new Error(error);
+            throw error;
 
         }
 
@@ -144,7 +155,7 @@ export async function server_admin_login_function(data: {  password: string; }):
             };
 
             logger.error({ message: serializedError });
-            throw new Error(error.message);
+            throw error.message;
 
         }
         else {
@@ -543,6 +554,7 @@ export async function save_user_function(_data: { [key: string]: any }): Promise
             delete _data.password_hash;
         }
         if (!user) {
+          delete _data.id;
           user  = await Users.create(_data)
         }
         else {
@@ -560,7 +572,7 @@ export async function save_user_function(_data: { [key: string]: any }): Promise
         return user
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(`Error: ${error}`)
+        throw `Error: ${error}`;
     }
 
 

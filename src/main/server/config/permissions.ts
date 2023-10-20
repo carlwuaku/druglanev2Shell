@@ -1,5 +1,5 @@
 
- export const PERMISSION_VIEW_USER_ACTIVITIES = "View Sales History";
+ export const PERMISSION_VIEW_USER_ACTIVITIES = "View User Activity";
  export const PERMISSION_VIEW_PURCHASE_HISTORY = "View Purchase History";
  export const PERMISSION_VIEW_INVENTORY = "View Inventory";
  export const PERMISSION_VIEW_END_OF_DAY_REPORT = "View End Of Day Report";
@@ -24,7 +24,7 @@
  export const PERMISSION_VIEW_TRANSFER_HISTORY = "View Transfer History";
  export const PERMISSION_VIEW_SALES_REPORTS = "View Sales Reports";
  export const PERMISSION_VIEW_SALES_HISTORY = "View Sales History";
- 
+
 const SETTING_DUPLICATE_RECORD_TIMEOUT = "duplicate_record_timeout";
  const STRING_NO_UPCOMING_REFILLS_FOUND = "No upcoming refills found";
 

@@ -29,7 +29,8 @@ export const constants = {
 
   settings_filename: 'system-settings.json',
   db_filename: databaseName,
-
+server_url : process.env.NODE_ENV == "production" ?
+     "https://druglanepms.calgadsoftwares.com": "http://localhost/druglanebackend",
   company_id: '',
   default_functional_groups: [
     'Adult Analgesics Tablets',
@@ -63,7 +64,7 @@ export const constants = {
     env: 'production',
   },
 
-  PERMISSION_VIEW_USER_ACTIVITIES: 'View Sales History',
+  PERMISSION_VIEW_USER_ACTIVITIES: 'View User Activity',
   PERMISSION_VIEW_PURCHASE_HISTORY: 'View Purchase History',
   PERMISSION_VIEW_INVENTORY: 'View Inventory',
   PERMISSION_VIEW_END_OF_DAY_REPORT: 'View End Of Day Report',
