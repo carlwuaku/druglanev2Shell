@@ -16,7 +16,7 @@ router.get('/getAppName', async (req: Request, res: Response) => {
         let data = { name: constants.appname, long_name: constants.appLongName };
         res.status(201).json(data)
     } catch (error) {
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
     }
 })
 
@@ -31,7 +31,7 @@ router.post('/login', async (req: Request, res: Response) => {
     } catch (error) {
         console.log(error)
         // await helper.closeConnection();
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 
@@ -45,8 +45,7 @@ router.post('/admin_login', async (req: Request, res: Response) => {
         res.status(201).json(token);
 
     } catch (error) {
-        console.log(error)
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 
@@ -61,7 +60,7 @@ router.post('/resetAdminLogin', async (req: Request, res: Response) => {
 
     } catch (error) {
         console.log(error)
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 
@@ -76,7 +75,7 @@ router.post('/resetAdminPassword', async (req: Request, res: Response) => {
 
     } catch (error) {
         console.log(error)
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 
@@ -87,7 +86,7 @@ router.get('/getBranches', hasPermission, async (req: Request, res: Response) =>
         let data = await get_branches_function();
         res.status(201).json(data)
     } catch (error) {
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 })
@@ -102,7 +101,7 @@ router.get('/getLogo', async (req: Request, res: Response) => {
         res.status(201).json(data);
     } catch (error) {
         logger.error(error)
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
     }
 })
 
@@ -115,7 +114,7 @@ router.post('/saveBranch', hasPermission, async (req: Request, res: Response) =>
         res.json(data);
     } catch (error) {
         logger.error(error)
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 })
@@ -126,7 +125,7 @@ router.get('/getInsurers', async (req: Request, res: Response) => {
         res.json(data);
     } catch (error) {
         logger.error(error)
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 });
@@ -137,7 +136,7 @@ router.get('/settings',  async (req: Request, res: Response) => {
         res.json(data);
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 });
@@ -148,7 +147,7 @@ router.get('/allPermissions', hasPermission, async (req: Request, res: Response)
         res.json(data);
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 });
@@ -161,7 +160,7 @@ router.post('/saveSettings',  async (req: Request, res: Response) => {
         res.status(200).json(data)
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 })
@@ -172,7 +171,7 @@ router.post('/saveRole', hasPermission, async (req: Request, res: Response) => {
         res.status(200).json(data)
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 });
@@ -183,7 +182,7 @@ router.get('/getRoles', hasPermission, hasPermission, async (req: Request, res: 
         res.status(200).json(data)
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 });
@@ -194,7 +193,7 @@ router.get('/getUsers', hasPermission, async (req: Request, res: Response) => {
         res.status(200).json(data)
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 });
@@ -205,7 +204,7 @@ router.get('/user/:id', hasPermission, async (req: Request, res: Response) => {
         res.status(200).json(data)
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 });
@@ -216,7 +215,7 @@ router.get('/role/:id', hasPermission, async (req: Request, res: Response) => {
         res.status(200).json(data)
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 });
@@ -227,7 +226,7 @@ router.get('/rolePermissions/:id', hasPermission, async (req: Request, res: Resp
         res.status(200).json(data);
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 });
@@ -241,7 +240,7 @@ router.delete('/rolePermissions/:role_id/:permission_id', hasPermission, async (
         res.status(200).json(data);
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 });
@@ -252,7 +251,7 @@ router.post('/saveUser', hasPermission, async (req: Request, res: Response) => {
         res.status(200).json(data)
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 });
@@ -266,7 +265,7 @@ router.delete('/user/:id', hasPermission, async (req: Request, res: Response) =>
         res.status(200).json(data)
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 });
@@ -280,7 +279,7 @@ router.delete('/role/:id/', hasPermission, async (req: Request, res: Response) =
         res.status(200).json(data)
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ status: '-1', data: null, message: error })
+        res.status(500).json({ message: error })
 
     }
 });

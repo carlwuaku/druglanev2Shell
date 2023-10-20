@@ -16,7 +16,7 @@ export class Users extends Model{
     autoIncrement: true
   })
   id!: number;
-  
+
   @ForeignKey(() => Roles)
   @Column({
     type: DataType.INTEGER
@@ -88,5 +88,5 @@ export class Users extends Model{
     @BelongsTo(() => Roles)
   userRole!: Roles;
 
-  permissions?:Permissions[]
+  permissions?:string[]
 }

@@ -6,7 +6,7 @@ import { parseSearchQuery } from '../helpers/searchHelper';
 import { sequelize } from '../config/sequelize-config';
 import { StockAdjustment } from '../models/StockAdjustment';
 import { getToday } from '../helpers/dateHelper';
-import { calculateCurrentStock, createStockAdjustmentSession, refreshCurrentStock, updateStockValue } from '../helpers/productsHelper';
+import { calculateCurrentStock, createStockAdjustmentSession, getStockValues, refreshCurrentStock, updateStockValue } from '../helpers/productsHelper';
 import { StockAdjustmentSessions } from '../models/StockAdjustmentSessions';
 import { StockAdjustmentPending } from '../models/StockAdjustmentPending';
 import { SalesDetails } from '../models/SalesDetails';
@@ -15,6 +15,7 @@ import { ReceivedTransferDetails } from '../models/ReceivedTransferDetails';
 import { TransferDetails } from '../models/TransferDetails';
 import { sortObjects } from '../helpers/generalHelper';
 import * as crypto from 'crypto'
+import { StockValues } from '../models/StockValues';
 const module_name = "products"
 
 /**
@@ -22,7 +23,7 @@ const module_name = "products"
  * @param _data query params
  * @returns List of Customer objects
  */
-export async function _getList(_data: { [key: string]: any }): Promise<Products[]> {
+export async function _getList(_data: { [key: string]: any }): Promise<{data: Products[], total: number}> {
     try {
 
         let limit = _data.limit ? parseInt(_data.limit) : 100;
@@ -40,13 +41,17 @@ export async function _getList(_data: { [key: string]: any }): Promise<Products[
             where
         });
 
+        let total = await Products.count({
+          where: where
+        })
 
 
-        return objects;
+
+        return {data: objects, total: total};
     } catch (error: any) {
 
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 
 };
@@ -113,6 +118,7 @@ export async function _getCount(_data: { [key: string]: any }): Promise<Number> 
             let searchQuery = JSON.parse(_data.param)
             where = parseSearchQuery(searchQuery)
         }
+        console.log(where)
         let count = await Products.count({
 
             where
@@ -122,7 +128,7 @@ export async function _getCount(_data: { [key: string]: any }): Promise<Number> 
     } catch (error: any) {
 
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 
 };
@@ -137,7 +143,7 @@ export async function save(_data: { [key: string]: any }): Promise<Products> {
         let id = _data.id;
         let change_stock = _data.change_stock;
         let change_unit = _data.change_unit;
-
+        console.log(_data)
         if (!_data.barcode) {
             _data.barcode = crypto.randomUUID()
         }
@@ -166,7 +172,7 @@ export async function save(_data: { [key: string]: any }): Promise<Products> {
             else {
                 let product = await Products.findByPk(id);
                 if (!product) {
-                    throw new Error(`Product not found id while trying to update ${id}`)
+                    throw `Product not found id while trying to update ${id}`
                 }
                 object = product;
                 if (change_unit === 'yes') {
@@ -213,7 +219,7 @@ export async function save(_data: { [key: string]: any }): Promise<Products> {
 
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 }
 
@@ -228,12 +234,12 @@ export async function find(_data: { [key: string]: any }): Promise<Products> {
 
         let product = await Products.findByPk(id)
         if (!product) {
-            throw new Error(`Product not found id ${id}`)
+            throw `Product not found id ${id}`
         }
         return product;
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 }
 
@@ -249,7 +255,7 @@ export async function get_stock(_data: { [key: string]: any }): Promise<Number> 
 
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 }
 
@@ -275,7 +281,7 @@ export async function delete_product(_data: { [key: string]: any }): Promise<boo
         return result;
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 }
 
@@ -301,7 +307,7 @@ export async function restore_deleted_product(_data: { [key: string]: any }): Pr
         return result;
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 }
 
@@ -341,7 +347,7 @@ export async function mass_edit(_data: { [key: string]: any }): Promise<boolean>
 
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 }
 
@@ -363,7 +369,7 @@ export async function create_stock_adjustment_session(_data: { date: string; cre
 
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 }
 
@@ -399,14 +405,14 @@ export async function close_stock_adjustment_session(_data: { code: string; user
 
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 }
 
 /**
  * get the latest session in progress, or create one if needed
- * @param _data 
- * @returns 
+ * @param _data
+ * @returns
  */
 export async function get_latest_session(_data: { date: string; created_on: string; user_id: any; }): Promise<string> {
     try {
@@ -438,7 +444,7 @@ export async function get_latest_session(_data: { date: string; created_on: stri
 
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 }
 
@@ -510,7 +516,7 @@ export async function save_stock_adjustment(_data: { code: string; items: string
 
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 }
 
@@ -557,7 +563,7 @@ export async function save_stock_adjustment_to_pending(_data: { code: string; it
 
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 }
 
@@ -565,10 +571,10 @@ export async function save_single_stock_adjustment(_data: { [key: string]: any }
     try {
 
         let object = await Products.findByPk(_data.product);
-        
+
         const result = await sequelize.transaction(async (t: Transaction) => {
             if (!object) {
-                throw new Error(`Product not found id ${_data.product}`)
+                throw `Product not found id ${_data.product}`
             }
 
             await StockAdjustment.create(_data, {
@@ -601,7 +607,7 @@ export async function save_single_stock_adjustment(_data: { [key: string]: any }
 
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 }
 
@@ -623,7 +629,7 @@ export async function save_pending_single_stock_adjustment(_data: { [key: string
             });
 
             let object = await Products.findByPk(_data.product);
-            
+
 
 
             t.afterCommit(() => {
@@ -642,14 +648,14 @@ export async function save_pending_single_stock_adjustment(_data: { [key: string
 
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 }
 
 /**
  * get the latest session in progress, or create one if needed
- * @param _data 
- * @returns 
+ * @param _data
+ * @returns
  */
 export async function get_pending_stock_quantity(_data: { code: string; product: string }): Promise<number> {
     try {
@@ -664,9 +670,9 @@ export async function get_pending_stock_quantity(_data: { code: string; product:
             }
         })
         if (!object) {
-            throw new Error(`StockAdjustmentPending not found id ${_data.code}`)
+            throw `StockAdjustmentPending not found id ${_data.code}`
         }
-        
+
         else {
             return object.quantity_counted
         }
@@ -674,12 +680,12 @@ export async function get_pending_stock_quantity(_data: { code: string; product:
 
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 }
 
 /**
- * 
+ *
  * @param _data query params
  * @returns List of stockAdjustmentSessions
  */
@@ -708,13 +714,13 @@ export async function get_stock_adjustment_sessions(_data: { [key: string]: any 
     } catch (error: any) {
 
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 
 };
 
 /**
- * 
+ *
  * @param _data query params
  * @returns List of stockAdjustments
  */
@@ -752,13 +758,13 @@ export async function get_stock_adjustments(_data: { [key: string]: any }): Prom
     } catch (error: any) {
 
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 
 };
 
 /**
- * 
+ *
  * @param _data query params
  * @returns List of stockAdjustmentSessions
  */
@@ -805,7 +811,7 @@ export async function get_pending_stock_adjustments_by_code(_data: { [key: strin
     } catch (error: any) {
 
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 
 };
@@ -932,7 +938,7 @@ export async function get_stock_changes(_data: { product: number }): Promise<Sto
         return results;
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 }
 
@@ -949,7 +955,7 @@ export async function get_distinct_field_values(_data: { field: string }): Promi
 
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 }
 
@@ -971,7 +977,7 @@ export async function get_changed_stock(_data: { code: string }): Promise<StockA
         return objects
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 
 
@@ -987,10 +993,24 @@ export async function refresh_current_stock(_data: { id: string }): Promise<bool
         return true;
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 
 
+}
+
+export async function get_stock_values(type:string){
+  try{
+            let results = await getStockValues();
+            if(type === "cost_value"){
+              return results.cost_value
+            }
+        return results.selling_value;
+  }
+  catch (error: any) {
+        logger.error({ message: error })
+        throw error;
+    }
 }
 
 

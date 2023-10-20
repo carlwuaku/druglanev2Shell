@@ -4,6 +4,7 @@ import { Users } from "../models/Users";
 import { get_role_permissions_function } from "../services/admin.service";
 import { errorMessages, infoMessages, moduleNames } from '../helpers/stringHelpers'
 import { UserSessions } from "../models/UserSessions";
+import { logger } from "../config/logger";
 
 export  async function isAdminLoggedIn (request: Request, response: Response, next: NextFunction) {
     //get the admin_login_token setting from the settings table
@@ -37,7 +38,7 @@ export async function isUserLoggedIn (request: Request, response: Response, next
 
     //check if the headers are valid
     const userToken = request.headers['token'];
-    const userId = request.headers['user_id'];
+    const userId = request.headers['userid'];
     if (!userToken || !userId) {
         response.status(403).json({ message: errorMessages.INCORRECT_REQUEST_CONFIG });
     }
@@ -61,8 +62,11 @@ export async function isUserLoggedIn (request: Request, response: Response, next
  */
 export async function hasPermission(request: Request, response: Response, next: NextFunction)  {
     //check if the headers are valid
+    try {
+
+
     const userToken = request.headers['token'];
-    const userId = request.headers['user_id'];
+    const userId = request.headers['userid'];
     if (!userToken) {
         response.status(403).json({ message: errorMessages.INCORRECT_REQUEST_CONFIG });
         return;
@@ -76,8 +80,7 @@ export async function hasPermission(request: Request, response: Response, next: 
 
     const user = userId ? await Users.findOne({
         where: {
-            id: userId,
-            token: userToken
+            id: userId
         }
     }) : null;
 
@@ -98,6 +101,9 @@ export async function hasPermission(request: Request, response: Response, next: 
             }
         }
         request.user_id = user!.id.toString();
+        request.body.user_id = user!.id.toString();
+        request.query.user_id = user!.id.toString();
+        request.params.user_id = user!.id.toString();
         next();
     }
     else if (adminSession) {
@@ -109,6 +115,10 @@ export async function hasPermission(request: Request, response: Response, next: 
         //user is not logged in at all
         response.status(403).json({ message: errorMessages.NOT_LOGGED_IN });
         return;
+    }
+    } catch (error) {
+      logger.error(error)
+      throw error;
     }
 
 }

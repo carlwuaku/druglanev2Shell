@@ -71,7 +71,7 @@ export const constants = {
        env: "production"
      },
 
-     PERMISSION_VIEW_USER_ACTIVITIES : "View Sales History",
+     PERMISSION_VIEW_USER_ACTIVITIES : "View User Activity",
      PERMISSION_VIEW_PURCHASE_HISTORY : "View Purchase History",
      PERMISSION_VIEW_INVENTORY : "View Inventory",
      PERMISSION_VIEW_END_OF_DAY_REPORT : "View End Of Day Report",

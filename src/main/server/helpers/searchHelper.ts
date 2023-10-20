@@ -16,9 +16,9 @@ export function parseSearchQuery(data: SearchQuery[]): WhereOptions<any> {
     return where;
 }
 
-export function getOperator(operator: string, param: string): any {
+export function getOperator(operator: operatorString, param: string): any {
     //the param may be separated by commas.
-    //TODO: CONSIDER changing that to an array of strings instead 
+    //TODO: CONSIDER changing that to an array of strings instead
 
     //store the like operator queries
     let like_queries: any[] = getOperatorParamArray(operator, param);
@@ -36,7 +36,11 @@ export function getOperator(operator: string, param: string): any {
     }
 }
 
-export function getOperatorParamArray(operator: string, param: string | Array<any>): Object[] {
+type operatorString = "dates_between"|"includes"|"starts_with"|"ends_with"|"equals"|
+"between"|"less_than"|"greater_than"|"greater_than_or_equal"|
+"less_than_or_equal"|"in"
+
+export function getOperatorParamArray(operator: operatorString, param: string | Array<any>): Object[] {
     let params = typeof(param) === "string" ? param.split(",").map(p => p.trim()) : [param]
     //store the like operator queries
     let like_queries: any[] = []
@@ -91,6 +95,6 @@ export function getOperatorParamArray(operator: string, param: string | Array<an
 
 interface SearchQuery {
     field: string;
-    operator: string;
+    operator: operatorString;
     param: string;
 }
