@@ -17,7 +17,7 @@
  export const PERMISSION_GIVE_DISCOUNT = "Give Discount";
  export const PERMISSION_EDIT_SALES = "Edit Sales";
  export const PERMISSION_DELETE_TRANSFERS = "Delete Transfers";
- export const PERMISSION_DELETE_SALES_RECORDS = "Sales Records";
+ export const PERMISSION_DELETE_SALES_RECORDS = "Delete Sales Records";
  export const PERMISSION_DELETE_PURCHASES = "Delete Purchases";
  export const PERMISSION_CREATE_SALES = "Create Sales";
  export const PERMISSION_ADJUST_STOCK = "Adjust Stock";

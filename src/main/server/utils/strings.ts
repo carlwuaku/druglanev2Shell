@@ -5,3 +5,4 @@ export const STRING_TOTAL_COST = "total_cost";
 export const STRING_DISCOUNT = "discount";
 export const YES = "Yes";
 export const NO = "No";
+export const STOCK_VALUE = "stock_value"

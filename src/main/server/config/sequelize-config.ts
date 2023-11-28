@@ -30,6 +30,7 @@ import { Transactions } from '../models/Transactions';
 import { TransactionDetails } from '../models/TransactionDetails';
 import { TransactionPayments } from '../models/TransactionPayments';
 import { TransactionMetadata } from '../models/TransactionMetadata';
+import { flattenNestedProductProperties } from '../helpers/generalHelper';
 // const databaseNames: { [key:string]:string} = {test:'test', development: 'dev'}
 /**
  * SequelizeConnectionError: This error is thrown if Sequelize is unable to establish a connection to the database. This could be due to various reasons such as an incorrect database name, hostname, port, or authentication credentials.
@@ -196,6 +197,15 @@ Customers.hasMany(Refills, {
 });
 Refills.belongsTo(Customers, {
     foreignKey: "customer_id"
+});
+
+Customers.hasMany(Products, {
+    foreignKey: "preferred_vendor",
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+});
+Products.belongsTo(Customers, {
+    foreignKey: "preferred_vendor"
 });
 
 Sales.hasMany(SalesDetails, {
@@ -413,6 +423,16 @@ Users.addHook('afterFind', (results) => {
         });
     } else {
         flattenNestedUserProperties(results);
+    }
+});
+
+Products.addHook('afterFind', (results) => {
+    if (Array.isArray(results)) {
+        results.forEach((result) => {
+          flattenNestedProductProperties(result);
+        });
+    } else {
+      flattenNestedProductProperties(results);
     }
 });
 

@@ -6,7 +6,6 @@ import { Card } from 'primereact/card';
 import React, { useEffect, useState } from 'react';
 import {
   GET_SERVER_STATE,
-  GET_SERVER_URL,
   GET_COMPANY_NAME,
   SERVER_MESSAGE_RECEIVED,
   SERVER_STATE_CHANGED,
@@ -23,7 +22,6 @@ function ServerLogs() {
   useEffect(() => {
     window.electron.ipcRenderer.send(GET_SERVER_STATE);
 
-    window.electron.ipcRenderer.send(GET_SERVER_URL);
     window.electron.ipcRenderer.send(GET_COMPANY_NAME);
 
     window.electron.ipcRenderer.on(SERVER_MESSAGE_RECEIVED, (event: any, data: any) => {

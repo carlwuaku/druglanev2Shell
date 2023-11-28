@@ -1,4 +1,4 @@
-import { parseSearchQuery } from "../helpers/searchHelper";
+import { parseSearchQuery, SearchQuery } from "../helpers/searchHelper";
 import { Includeable, Op, Transaction, WhereOptions } from "sequelize";
 import { Sales } from "../models/Sales";
 import { logger } from "../config/logger";
@@ -63,7 +63,7 @@ export async function getList(_data: {
         }
         //if the user specifies a product, search the products table
         if (_data.product) {
-            let poductSearchQuery = [{ field: 'name', operator: 'includes', param: _data.product }];// JSON.parse(_data.product)
+            let poductSearchQuery:SearchQuery[] = [{ field: 'name', operator: 'includes', param: _data.product }];// JSON.parse(_data.product)
             let Products_where = parseSearchQuery(poductSearchQuery)
             let products = await Products.findAll({
                 where: Products_where
@@ -119,7 +119,7 @@ export async function getList(_data: {
 };
 
 /**
- * save or update a sale. if a code is provided, an update is performed, else an insert. 
+ * save or update a sale. if a code is provided, an update is performed, else an insert.
  * in case of a return sale, be sure to add prop return:yes to the _data
  * @param _data details of the sale such as customer, payment_method, and date, and the details of the items
  * @returns the code of the saved purchase
@@ -288,7 +288,7 @@ export async function saveDailyRecord(_data: {
                 }
             })
         }
-        
+
 
     } catch (error: any) {
         logger.error({ message: error })
@@ -388,7 +388,7 @@ export async function deleteSales(_data: { codes: string, user_id: string }): Pr
 
 
 /**
- * get a single sale object using the id or code    
+ * get a single sale object using the id or code
  * @param _data must contain the id or code of the sale
  * @returns a purchase item
  */
@@ -446,7 +446,7 @@ export async function find(_data: { id: string }): Promise<Sales> {
 
 
 /**
- * get the total sale, total credit, total discount, total paid and balance amounts for a specified time and 
+ * get the total sale, total credit, total discount, total paid and balance amounts for a specified time and
  * customer. defaults to no customer and the current month
  * @param _data may contain the start and end dates, and vendor
  * @returns an object
@@ -556,7 +556,7 @@ export async function findUserSummaryBetweenDates(_data: { start_date?: string, 
         data.forEach(obj => {
 
             // {payment_method, total, discount,created_by, tax, cost, display_name}
-            //the created_by holds the user's id or null. if seen, update the payment method. else insert 
+            //the created_by holds the user's id or null. if seen, update the payment method. else insert
             //it with the current payment method
             if (!hash[obj.created_by]) {
                 hash[obj.created_by] = {
@@ -652,7 +652,7 @@ export async function findShiftSummaryBetweenDates(_data: { [key: string]: any }
         data.forEach(obj => {
 
             // {payment_method, total, discount,created_by, tax, cost, display_name}
-            //the created_by holds the user's id or null. if seen, update the payment method. else insert 
+            //the created_by holds the user's id or null. if seen, update the payment method. else insert
             //it with the current payment method
             if (hash[obj.shift] == undefined) {
                 hash[obj.shift] = {
@@ -832,7 +832,7 @@ export async function getBranchDailySalesSummary(_data: { start_date: string; en
             queries.forEach(q => {
                 /*the queries are like [  { date: '2021-07-11', payment_method: 'Cash', total: 3320.67, discount: 5.00, tax: 0.00 },
       { date: '2021-07-11', payment_method: 'Mobile Money', total: 201.5, discount: 5.00, tax: 0.00 },]
-      with each day/payment_method combination. so we use the date to get the hash key and update it's payment 
+      with each day/payment_method combination. so we use the date to get the hash key and update it's payment
       method key*/
                 //convert the payment_method to lowercase with underscores for spaces
                 //once the date changes, push to the final objects
@@ -937,7 +937,7 @@ export async function getBranchDailyRecords(_data: { start_date: string; end_dat
                 let curr_date = range[i];
                 hash[curr_date] = {
                     date: curr_date,
-                   
+
                     mobile_money: 0,
                     cash: 0,
                     pos: 0,
@@ -949,11 +949,11 @@ export async function getBranchDailyRecords(_data: { start_date: string; end_dat
                     computer_sales: 0,
                     difference: 0
                 }
-            } 
+            }
             console.log('queries', queries)
 
             queries.forEach(q => {
-                
+
                 //once the date changes, push to the final objects
                 hash[q.date]['cash'] = q.cash;
                 hash[q.date]['mobile_money'] = q.momo;

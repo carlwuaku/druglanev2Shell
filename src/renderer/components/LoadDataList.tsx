@@ -147,14 +147,22 @@ function LoadDataList(props: {
   };
 
   useEffect(() => {
-    window.electron.ipcRenderer.send(GET_SERVER_URL);
-
-    const handleServerUrlReceived = async ( data: any) => {
-      serverUrl.current = data;
+    if (sessionStorage.getItem(GET_SERVER_URL)) {
+      serverUrl.current = sessionStorage.getItem(GET_SERVER_URL)!;
       loadData();
-    };
+    }
+    else {
+      window.electron.ipcRenderer.send(GET_SERVER_URL);
 
-    window.electron.ipcRenderer.on(SERVER_URL_RECEIVED, handleServerUrlReceived);
+      const handleServerUrlReceived = async (data: any) => {
+        serverUrl.current = data;
+        sessionStorage.setItem(GET_SERVER_URL, data);
+        loadData();
+      };
+
+      window.electron.ipcRenderer.on(SERVER_URL_RECEIVED, handleServerUrlReceived);
+    }
+
 
   }, []);
 

@@ -38,10 +38,10 @@ export function getOperator(operator: operatorString, param: string): any {
 
 type operatorString = "dates_between"|"includes"|"starts_with"|"ends_with"|"equals"|
 "between"|"less_than"|"greater_than"|"greater_than_or_equal"|
-"less_than_or_equal"|"in"
+"less_than_or_equal"|"in"|"date_less_than"|"date_greater_than"
 
-export function getOperatorParamArray(operator: operatorString, param: string | Array<any>): Object[] {
-    let params = typeof(param) === "string" ? param.split(",").map(p => p.trim()) : [param]
+export function getOperatorParamArray(operator: operatorString, param: string | Array<any> | Date): Object[] {
+  let params = typeof(param) === "string" ? param.split(",").map(p => p.trim()) : [param]
     //store the like operator queries
     let like_queries: any[] = []
     params.forEach(p => {
@@ -50,6 +50,9 @@ export function getOperatorParamArray(operator: operatorString, param: string | 
             p.map(obj => {
                 obj = new Date(obj)
             });
+        }
+        if ((operator === 'date_less_than' || operator === 'date_greater_than') && typeof(p) === "string" ) {
+            p = new Date(p);
         }
         switch (operator) {
             case 'includes':
@@ -85,6 +88,12 @@ export function getOperatorParamArray(operator: operatorString, param: string | 
             case 'in':
                 like_queries.push({[Op.in]: p})//an array of values is expected [1,2,3]
                 break;
+                case 'date_greater_than':
+                like_queries.push({[Op.gt]: p})//a date is expected
+                break;
+                case 'date_less_than':
+                like_queries.push({[Op.lt]: p})//a date is expected
+                break;
 
             default:
                 like_queries.push({ [Op.like]: `${p}` })
@@ -93,7 +102,7 @@ export function getOperatorParamArray(operator: operatorString, param: string | 
     return like_queries
 }
 
-interface SearchQuery {
+export interface SearchQuery {
     field: string;
     operator: operatorString;
     param: string;

@@ -40,12 +40,12 @@ import { OnlineBackups } from "../../models/OnlineBackups";
 import { DbSync } from "../../models/DbSync";
 import { IncomingPayments } from "../../models/IncomingPayments";
 import { DailyRecords } from "../../models/DailyRecords";
-import { Transactions } from "main/server/models/Transactions";
-import { TransactionDetails } from "main/server/models/TransactionDetails";
-import { TransactionTypes } from "main/server/models/TransactionTypes";
-import { STOCK_EFFECTS } from "main/server/models/stockEffects";
-import { TransactionPayments } from "main/server/models/TransactionPayments";
-import { TransactionMetadata } from "main/server/models/TransactionMetadata";
+import { Transactions } from "../../models/Transactions";
+import { TransactionDetails } from "../../models/TransactionDetails";
+import { TransactionTypes } from "../../models/TransactionTypes";
+import { STOCK_EFFECTS } from "../../models/stockEffects";
+import { TransactionPayments } from "../../models/TransactionPayments";
+import { TransactionMetadata } from "../../models/TransactionMetadata";
 
 async function getIndexes(tableName:string, queryInterface:QueryInterface): Promise<string[]>{
     let index_names: string[] = [];
@@ -3552,7 +3552,7 @@ export const migrationsList: InputMigrations<QueryInterface> = [
                 tax: {
                     type: DOUBLE,
                     allowNull: false,
-                    defaultValue: 'Not Set'
+                    defaultValue: 0
                 },
                 user_name: {
                     type: STRING,
@@ -3829,7 +3829,7 @@ export const migrationsList: InputMigrations<QueryInterface> = [
         }
     },
     {
-        name: "202309300040-createTransactionPayments",
+        name: "202309300040-createTransactionMetadata",
         async up({ context: queryInterface }: { context: QueryInterface }) {
 
             await queryInterface.createTable(TransactionMetadata.tableName, {
@@ -3876,5 +3876,36 @@ export const migrationsList: InputMigrations<QueryInterface> = [
             await queryInterface.dropTable(TransactionMetadata.tableName);
         }
     },
+    {
+        name: "2023102023453-updateCustomersTable",
+        async up({ context: queryInterface }: { context: QueryInterface }) {
 
+            await queryInterface.addColumn(Customers.tableName, 'type',
+                {
+                    type: STRING,
+                    defaultValue: "customer"
+                });
+
+
+
+        },
+        async down({ context: queryInterface }: { context: QueryInterface }) {
+        }
+    },
+{
+        name: "2023102823453-updateActivitiesModule",
+        async up({ context: queryInterface }: { context: QueryInterface }) {
+
+            await queryInterface.changeColumn(Activities.tableName, 'module',
+                {
+                    type: STRING,
+                    defaultValue: "System"
+                });
+
+
+
+        },
+        async down({ context: queryInterface }: { context: QueryInterface }) {
+        }
+    },
 ]

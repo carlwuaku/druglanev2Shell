@@ -1,20 +1,22 @@
 import { Activities } from '../models/Activities';
 import { logger } from '../config/logger'
-import { Op, WhereOptions } from 'sequelize';
+import { Op, Transaction, WhereOptions } from 'sequelize';
 import { Customers } from '../models/Customers';
 import { parseSearchQuery } from '../helpers/searchHelper';
 import { DiagnosticTests } from '../models/DiagnosticTests';
 import { CustomerDiagnostics } from '../models/CustomerDiagnostics';
 import { Refills } from '../models/Refills';
+import { sequelize } from '../config/sequelize-config';
+const module_name = "customers"
 
 /**
  * get a list of customers
  * @param _data query params
  * @returns List of Customer objects
  */
-export async function _getList  (_data: { [key: string]: any}):Promise<Customers[]>  {
+export async function _getList  (_data: { [key: string]: any}):Promise<{data: Customers[], total: number}>  {
     try {
-       
+
         let limit = _data.limit ? parseInt(_data.limit) : 100;
         let offset = _data.offset ? parseInt(_data.offset) : 0;
         //if user specifies a search query
@@ -42,12 +44,14 @@ export async function _getList  (_data: { [key: string]: any}):Promise<Customers
         //     let balance = total_credit - paid;
         //     object.balance = balance.toLocaleString()
         // }
-
-        return objects;
+let total = await Customers.count({
+          where: where
+        })
+        return {data: objects, total: total};
     } catch (error: any) {
-       
+
         logger.error({message: error})
-        throw new Error(error);
+        throw error;
     }
 
 };
@@ -61,7 +65,7 @@ export async function _getCount(_data: { [key: string]: any }): Promise<Number> 
             where = parseSearchQuery(searchQuery)
         }
         let count = await Customers.count({
-            
+
             where
         });
 
@@ -69,7 +73,7 @@ export async function _getCount(_data: { [key: string]: any }): Promise<Number> 
     } catch (error: any) {
 
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 
 };
@@ -98,7 +102,7 @@ export async function _getCount(_data: { [key: string]: any }): Promise<Number> 
 //         return objects
 //     } catch (error: any) {
 //        logger.error({message: error})
-//         throw new Error(error);
+//         throw error;
 //     }
 
 // };
@@ -111,16 +115,46 @@ export async function _getCount(_data: { [key: string]: any }): Promise<Number> 
 export async function _save (_data: { [key: string]: any}):Promise<Customers>  {
 
     try {
-        let object = await Customers.create(_data)
-        Activities.create({
-            activity: `added/updated customer ${_data.name}`,
-            user_id: `${_data.user_id}`,
-            module: 'customers'
+      let id = _data.id;
+       const result = await sequelize.transaction(async (t: Transaction) => {
+            let object: Customers;
+            if (!id) {
+                //create
+                object = await Customers.create(_data, {
+                    transaction: t
+                });
+
+            }
+            else {
+                let customer = await Customers.findByPk(id);
+                if (!customer) {
+                    throw `Customer not found id while trying to update ${id}`
+                }
+                object = customer;
+                await Customers.update(_data, {
+                    where: {
+                        id: id
+                    },
+                    transaction: t
+                });
+
+            }
+
+            t.afterCommit(async () => {
+                await Activities.create({
+                    activity: `updated/created a customer ${object.name} `,
+                    user_id: `${_data.user_id}`,
+                    module: module_name,
+                    object_id: object.id
+                })
+            })
+            return object;
         })
-        return object;
+
+        return result
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 
 };
@@ -135,17 +169,17 @@ export async function _delete  (_data: { [key: string]: any}):Promise<boolean>  
             module: 'customers'
         })
         return true
-       
+
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 
 };
 
 
 
-export async function _findById(_data: { [key: string]: any }):Promise<Customers>  {
+export async function _findById(_data: { id: string }):Promise<Customers>  {
     try {
         let id = _data.id;
 
@@ -164,7 +198,7 @@ export async function _findById(_data: { [key: string]: any }):Promise<Customers
         return object;
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 
 };
@@ -181,7 +215,7 @@ export async function _saveDiagnostics (_data: { [key: string]: any})  {
         return object;
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 
 };
@@ -201,7 +235,7 @@ export async function _saveDiagnostics (_data: { [key: string]: any})  {
 //     } catch (error: any) {
 //         if (constants.isSqliteError(error)) await helper.closeConnection();
 //         log.error(error)
-//         throw new Error(error);
+//         throw error;
 //     }
 
 // };
@@ -224,13 +258,13 @@ export async function _saveDiagnostics (_data: { [key: string]: any})  {
 //         if (process.env.NODE_ENV != "production") console.log(error)
 
 //         log.error(error)
-//         throw new Error(error);
+//         throw error;
 //     }
 
 // };
 
 export async function _getCustomerDiagnosticsList  (_data: { [key: string]: any}):Promise<CustomerDiagnostics[]>{
-   
+
     try {
         let limit = _data.limit ? parseInt(_data.limit) : 100;
         let offset = _data.offset ? parseInt(_data.offset) : 0
@@ -250,7 +284,7 @@ export async function _getCustomerDiagnosticsList  (_data: { [key: string]: any}
             where['end_date'] = { [Op.lte]: `${end} 23:59:59` }
         }
 
-        
+
         let objects = await CustomerDiagnostics.findAll({
             limit,
             offset,
@@ -262,7 +296,7 @@ export async function _getCustomerDiagnosticsList  (_data: { [key: string]: any}
         return objects
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 
 };
@@ -280,14 +314,14 @@ export async function _getDiagnosticsList  (_data: { [key: string]: any}):Promis
         return objects
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 
 };
 
 
 export async function _addRefill (_data: { [key: string]: any}):Promise<Refills>  {
-   
+
     try {
         let object = Refills.create(_data)
         Activities.create({
@@ -298,15 +332,15 @@ export async function _addRefill (_data: { [key: string]: any}):Promise<Refills>
         return object;
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 
 };
 
 export async function _addMultipleRefill(_data: { [key: string]: any}):Promise<boolean>  {
-    
+
     try {
-        
+
         let objects = JSON.parse(_data.data);
         await Refills.bulkCreate(objects)
         // objects.forEach(async (obj) => {
@@ -323,7 +357,7 @@ export async function _addMultipleRefill(_data: { [key: string]: any}):Promise<b
         return true;
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 
 };
@@ -332,9 +366,9 @@ export async function _addMultipleRefill(_data: { [key: string]: any}):Promise<b
 
 export async function _deleteRefill (_data: { [key: string]: any}):Promise<boolean> {
     try {
-        
+
         let ids = _data.id.split(",").map((id: string) => id.trim())
-       
+
         let objects = await Refills.findAll({
             where: {
                 id: { [Op.in]: ids }
@@ -350,13 +384,13 @@ export async function _deleteRefill (_data: { [key: string]: any}):Promise<boole
             user_id: `${_data.user_id}`,
             module: 'customers'
         })
-        
+
 
 
         return true
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 
 };
@@ -364,11 +398,11 @@ export async function _deleteRefill (_data: { [key: string]: any}):Promise<boole
 /**
  * get the list of refills
  * @param _data Object of key:value
- * @returns list of refills 
+ * @returns list of refills
  */
 export async function _getRefillList(_data: { [key: string]: any }):Promise<Refills[]> {
-    
-    
+
+
     try {
         let limit = _data.limit ? parseInt(_data.limit) : 100;
         let offset = _data.offset ? parseInt(_data.offset) : 0
@@ -397,13 +431,13 @@ export async function _getRefillList(_data: { [key: string]: any }):Promise<Refi
             where
         });
         //TODO get the customer name and product names
-        
+
 
 
         return objects
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 
 };
@@ -436,7 +470,7 @@ export async function _countRefills(_data: { [key: string]: any }):Promise<numbe
         return count;
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error);
+        throw error;
     }
 
 };

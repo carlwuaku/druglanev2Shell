@@ -1,5 +1,5 @@
 import { parseSearchQuery } from "../helpers/searchHelper";
-import { Includeable, Op, Transaction, WhereOptions } from "sequelize";
+import { Includeable, Op, Optional, Transaction, WhereOptions } from "sequelize";
 import { Transactions } from "../models/Transactions";
 import { logger } from "../config/logger";
 import { TransactionDetails } from "../models/TransactionDetails";
@@ -33,6 +33,42 @@ const attributes: Includeable[] = [{
     ],
 }
 ]
+
+interface ITransactionDetails {
+
+  id: number;
+
+  product: number;
+
+product_name: string;
+  quantity: number;
+
+  price: number;
+
+  unit: string;
+
+
+
+
+  label: string;
+
+
+  code: string;
+
+
+  cost_price: number;
+
+
+
+  expiry: string;
+
+
+  batch_number: string;
+
+  total?: number;
+  display_name?: string;
+  product_id?: string;
+}
 
 //TODO: make sure deleted details do not affect stock values
 /**
@@ -129,31 +165,29 @@ export async function getList(_data: {
  */
 export async function save(_data: {
     date?: string,
-    items?: string,
+    items?: ITransactionDetails[],
     code?: string,
+    customer?: string,
+    type: string,
+    client_name: string,
+    client_contact: string,
+    client_address: string,
+    user_name: string,
     created_on?: string,
     return?: string,
     created_by: string,
     user_id: string,
-    customer?: string,
-    amount_paid: string,
-    payment_method: string,
-    momo_reference?: string,
-    insurance_provider?: string,
-    insurance_member_name?: string,
-    insurance_member_id?: string,
-    creditor_name?: string,
-    credit_paid?: string,
     discount?: string,
+    tax?: string,
     shift?: string,
-    tax?: string
+    payments?: TransactionPayments[]
 
 }): Promise<string> {
     try {
         //the data should come with the sale data and
         //the details data.
 
-        let items: any[] = _data.items ? JSON.parse(_data.items) : [];
+        const items: ITransactionDetails[] = _data.items || [];
         //if no code was given, generate one and create. else
         //delete that code and re-insert
         let code = _data.code;
@@ -171,7 +205,7 @@ export async function save(_data: {
                 })
                 activity = `updated transactions item with code ${code}.`
                 if (!object) {
-                    throw new Error(`Unable to update sale with code: ${code}. Not found`);
+                    throw `Unable to update sale with code: ${code}. Not found`;
                 }
                 Transactions.update(_data, {
                     transaction: t,
@@ -179,29 +213,12 @@ export async function save(_data: {
                         code: code
                     }
                 });
-                // await object.update(_data, {
-                //     transaction: t,
-                //     logging(sql, timing?) {
-                //         console.log(sql, timing)
-                //     },
-                // });
-                //update the created_on for the products as well
-                await TransactionDetails.update({
-                    created_on: timestamp
-                }, {
-                    transaction: t,
-                    where: {
-                        code: code
-                    }
-                })
-
+                return code;
             }
             else {
                 //generate code
-                code = crypto.randomUUID();
-                if (isReturn) {
-                    code = "RT-" + code;
-                }
+                const newCode = isReturn ? crypto.randomUUID() : "RT-" +crypto.randomUUID();
+
                 activity = `created sale item with code ${code}`
 
 
@@ -213,18 +230,15 @@ export async function save(_data: {
                     transaction: t
                 });
                 items.map(item => {
-                    item.code = code;
-                    item.date = _data.date;
-                    item.created_by = _data.user_id;
-                    item.date = date;
-                    item.created_on = timestamp;
+                    item.code = newCode;
                 })
 
-                await TransactionDetails.bulkCreate(items,
+                await TransactionDetails.bulkCreate(items as {[key:string]:any} [],
                     {
                         transaction: t
                     });
 
+                    code = newCode;
             }
 
             t.afterCommit(async () => {
@@ -550,10 +564,10 @@ export async function findUserSummaryBetweenDates(_data: { start_date?: string, 
         let discount_tax_data = await getDiscountTaxReportByUser(start, end);
 
         let overall_total = 0, overall_tax = 0, overall_discount = 0;
-        let results = [];
+        let results:SaleSummaryData[] = [];
 
         let hash: { [key: string]: any } = {};
-        let last_created_by = undefined;
+        let last_created_by = 0;
         let count = 0;
 
         data.forEach(obj => {
@@ -647,7 +661,7 @@ export async function findShiftSummaryBetweenDates(_data: { [key: string]: any }
         let discount_tax_data = await getDiscountTaxReportByShift(start, end)
 
         let overall_total = 0, overall_tax = 0, overall_discount = 0;
-        let results = [];
+        let results:SaleSummaryData[] = [];
 
         let hash: { [key: string]: any } = {};
 
@@ -806,7 +820,7 @@ export async function getBranchDailySalesSummary(_data: { start_date: string; en
         let overall_cost = 0;
         let total_credit = 0;
         let overall_discount = 0;
-        let objects = [];
+        let objects:any[] = [];
         let overall_tax = 0;
         //get the range
         if (queries.length > 0) {
