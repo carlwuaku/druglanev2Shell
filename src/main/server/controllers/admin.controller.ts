@@ -4,6 +4,7 @@ const router: Router = express.Router();
 import {addRole, delete_role_function, delete_role_permission_function, delete_user_function, doResetAdminPassword, getSettings, get_branches_function, get_insurers_function, get_logo_function, get_permissions_function, get_roles_function, get_role_function, get_role_permissions_function, get_users_function, get_user_function, login_function, resetAdminPassword, saveSettings, save_branch_function, save_user_function, server_admin_login_function} from '../services/admin.service'
 import { hasPermission } from '../utils/auth';
 import { constants } from '../utils/constants';
+import { extractSqlMessage } from '../helpers/generalHelper';
 
 
 router.get("/", async (req: Request, res: Response) => {
@@ -16,7 +17,7 @@ router.get('/getAppName', async (req: Request, res: Response) => {
         let data = { name: constants.appname, long_name: constants.appLongName };
         res.status(201).json(data)
     } catch (error) {
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
     }
 })
 
@@ -31,7 +32,7 @@ router.post('/login', async (req: Request, res: Response) => {
     } catch (error) {
         console.log(error)
         // await helper.closeConnection();
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 
@@ -45,7 +46,7 @@ router.post('/admin_login', async (req: Request, res: Response) => {
         res.status(201).json(token);
 
     } catch (error) {
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 
@@ -60,7 +61,7 @@ router.post('/resetAdminLogin', async (req: Request, res: Response) => {
 
     } catch (error) {
         console.log(error)
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 
@@ -75,7 +76,7 @@ router.post('/resetAdminPassword', async (req: Request, res: Response) => {
 
     } catch (error) {
         console.log(error)
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 
@@ -86,7 +87,7 @@ router.get('/getBranches', hasPermission, async (req: Request, res: Response) =>
         let data = await get_branches_function();
         res.status(201).json(data)
     } catch (error) {
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 })
@@ -101,7 +102,7 @@ router.get('/getLogo', async (req: Request, res: Response) => {
         res.status(201).json(data);
     } catch (error) {
         logger.error(error)
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
     }
 })
 
@@ -114,7 +115,7 @@ router.post('/saveBranch', hasPermission, async (req: Request, res: Response) =>
         res.json(data);
     } catch (error) {
         logger.error(error)
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 })
@@ -125,7 +126,7 @@ router.get('/getInsurers', async (req: Request, res: Response) => {
         res.json(data);
     } catch (error) {
         logger.error(error)
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 });
@@ -136,7 +137,7 @@ router.get('/settings',  async (req: Request, res: Response) => {
         res.json(data);
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 });
@@ -147,7 +148,7 @@ router.get('/allPermissions', hasPermission, async (req: Request, res: Response)
         res.json(data);
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 });
@@ -160,7 +161,7 @@ router.post('/saveSettings',  async (req: Request, res: Response) => {
         res.status(200).json(data)
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 })
@@ -171,7 +172,7 @@ router.post('/saveRole', hasPermission, async (req: Request, res: Response) => {
         res.status(200).json(data)
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 });
@@ -182,7 +183,7 @@ router.get('/getRoles', hasPermission, hasPermission, async (req: Request, res: 
         res.status(200).json(data)
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 });
@@ -193,7 +194,7 @@ router.get('/getUsers', hasPermission, async (req: Request, res: Response) => {
         res.status(200).json(data)
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 });
@@ -204,7 +205,7 @@ router.get('/user/:id', hasPermission, async (req: Request, res: Response) => {
         res.status(200).json(data)
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 });
@@ -215,7 +216,7 @@ router.get('/role/:id', hasPermission, async (req: Request, res: Response) => {
         res.status(200).json(data)
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 });
@@ -226,7 +227,7 @@ router.get('/rolePermissions/:id', hasPermission, async (req: Request, res: Resp
         res.status(200).json(data);
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 });
@@ -240,7 +241,7 @@ router.delete('/rolePermissions/:role_id/:permission_id', hasPermission, async (
         res.status(200).json(data);
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 });
@@ -251,7 +252,7 @@ router.post('/saveUser', hasPermission, async (req: Request, res: Response) => {
         res.status(200).json(data)
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 });
@@ -265,7 +266,7 @@ router.delete('/user/:id', hasPermission, async (req: Request, res: Response) =>
         res.status(200).json(data)
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 });
@@ -279,7 +280,7 @@ router.delete('/role/:id/', hasPermission, async (req: Request, res: Response) =
         res.status(200).json(data)
     } catch (error) {
         logger.error({ message: error })
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: extractSqlMessage(error) })
 
     }
 });

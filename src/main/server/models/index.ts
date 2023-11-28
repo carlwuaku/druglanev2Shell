@@ -33,8 +33,14 @@ import { Users } from '../models/Users';
 import { UserSessions } from '../models/UserSessions';
 import { Vendors } from '../models/Vendors';
 import { Tokens } from './Tokens';
+import { Transactions } from './Transactions';
+import { TransactionDetails } from './TransactionDetails';
+import { TransactionMetadata } from './TransactionMetadata';
+import { TransactionPayments } from './TransactionPayments';
+import { TransactionTypes } from './TransactionTypes';
 export default [Activities, Branches, CustomerDiagnostics, Customers, DailyRecords, DbBackups, DbSync,
     DiagnosticTests, IncomingPayments, InsuranceProviders, OnlineBackups, OutgoingPayments,
     Permissions, ProductBatches, Products, PurchaseDetails, Purchases, ReceivedTransferDetails, ReceivedTransfers, Refills,
     RolePermissions, Roles, Sales, SalesDetails, Settings, StockAdjustment, StockAdjustmentPending, StockAdjustmentSessions,
-    StockValues, TransferDetails, Transfers, Users, UserSessions, Vendors, Tokens];
+    StockValues, TransferDetails, Transfers, Users, UserSessions, Vendors, Tokens, Transactions, TransactionDetails,
+    TransactionMetadata, TransactionPayments, TransactionTypes];

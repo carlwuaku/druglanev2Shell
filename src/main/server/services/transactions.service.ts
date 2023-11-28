@@ -1,8 +1,8 @@
-import { parseSearchQuery, SearchQuery } from "../helpers/searchHelper";
-import { Includeable, Op, Transaction, WhereOptions } from "sequelize";
-import { Sales } from "../models/Sales";
+import { parseSearchQuery } from "../helpers/searchHelper";
+import { Includeable, Op, Optional, Transaction, WhereOptions } from "sequelize";
+import { Transactions } from "../models/Transactions";
 import { logger } from "../config/logger";
-import { SalesDetails } from "../models/SalesDetails";
+import { TransactionDetails } from "../models/TransactionDetails";
 import { sequelize } from "../config/sequelize-config";
 import { Products } from "../models/Products";
 import { refreshCurrentStock, updateStockValue } from "../helpers/productsHelper";
@@ -15,19 +15,17 @@ import { getDailySalesWithPaymentMethods, getDiscountReportByPaymentMethodSpecif
 import { DailyRecords } from "../models/DailyRecords";
 import * as crypto from 'crypto'
 import { STRING_DISCOUNT, STRING_NUMBER_OF_ITEMS, STRING_TOTAL, STRING_TOTAL_AMOUNT } from "../utils/strings";
-import { Console } from "console";
+import { TransactionPayments } from "../models/TransactionPayments";
+import { TransactionMetadata } from "../models/TransactionMetadata";
 
-const module_name = "sales";
+const module_name = "transactions";
 const attributes: Includeable[] = [{
     model: Customers,
     attributes: ['name', 'id']
 },
+
 {
-    model: Users,
-    attributes: ['display_name']
-},
-{
-    model: SalesDetails,
+    model: TransactionDetails,
     attributes: [
         [sequelize.literal('sum(quantity * price)'), STRING_TOTAL_AMOUNT],
         [sequelize.literal('count(id)'), 'num_items']
@@ -36,19 +34,56 @@ const attributes: Includeable[] = [{
 }
 ]
 
+interface ITransactionDetails {
+
+  id: number;
+
+  product: number;
+
+product_name: string;
+  quantity: number;
+
+  price: number;
+
+  unit: string;
+
+
+
+
+  label: string;
+
+
+  code: string;
+
+
+  cost_price: number;
+
+
+
+  expiry: string;
+
+
+  batch_number: string;
+
+  total?: number;
+  display_name?: string;
+  product_id?: string;
+}
+
 //TODO: make sure deleted details do not affect stock values
 /**
- * get a list of Sales matching the params provided. the params can be empty or a json string
+ * get a list of Transactions matching the params provided. the params can be empty or a json string
  * @param _data an object where param is a json string
- * @returns list of matching Sales
+ * @returns list of matching Transactions
  */
 export async function getList(_data: {
     limit?: string,
     offset?: string,
-    param?: string,
-    product?: string
+    main_filter?: string,
+    details_filter?: string,
+    meta_data_filter?: string
 
-}): Promise<Sales[]> {
+}): Promise<Transactions[]> {
     try {
 
         let limit = _data.limit ? parseInt(_data.limit) : 100;
@@ -57,23 +92,19 @@ export async function getList(_data: {
         //if user specifies a search query
         let where: WhereOptions = {};
         let detailsWhere: WhereOptions = {};
-        if (_data.param) {
-            let searchQuery = JSON.parse(_data.param)
+        let metadataWhere: WhereOptions = {};
+        if (_data.main_filter) {
+            let searchQuery = JSON.parse(_data.main_filter)
             where = parseSearchQuery(searchQuery)
         }
-        //if the user specifies a product, search the products table
-        if (_data.product) {
-            let poductSearchQuery:SearchQuery[] = [{ field: 'name', operator: 'includes', param: _data.product }];// JSON.parse(_data.product)
-            let Products_where = parseSearchQuery(poductSearchQuery)
-            let products = await Products.findAll({
-                where: Products_where
-            });
-            let product_ids: number[] = products.reduce(function (accumulator: number[], curr: Products) {
-                return accumulator.concat(curr.id);
-            }, []);
-            detailsWhere['product'] = { [Op.in]: product_ids }
+
+        if (_data.details_filter) {
+            detailsWhere = parseSearchQuery(JSON.parse(_data.details_filter))
         }
-        let objects = await Sales.findAll({
+        if (_data.meta_data_filter) {
+            metadataWhere = parseSearchQuery(JSON.parse(_data.meta_data_filter))
+        }
+        let objects = await Transactions.findAll({
 
             limit,
             offset,
@@ -84,20 +115,28 @@ export async function getList(_data: {
 
                     attributes: ['name', 'id']
                 },
-                {
-                    model: Users,
-                    attributes: ['display_name']
-                },
 
                 {
-                    model: SalesDetails,
-                    as: SalesDetails.tableName,
+                    model: TransactionDetails,
+                    as: TransactionDetails.tableName,
+                    where: detailsWhere,
 
                     attributes: [
                         [sequelize.literal('SUM(quantity * price)'), STRING_TOTAL],
-                        [sequelize.literal(`count(${SalesDetails.tableName}.id)`), STRING_NUMBER_OF_ITEMS]
+                        [sequelize.literal(`count(${TransactionDetails.tableName}.id)`), STRING_NUMBER_OF_ITEMS]
                     ]
 
+                },
+
+                {
+                    model: TransactionPayments,
+                    as: TransactionPayments.tableName
+                },
+
+                {
+                    model: TransactionMetadata,
+                    as: TransactionMetadata.tableName,
+                    where: metadataWhere
                 }
             ],
 
@@ -119,38 +158,36 @@ export async function getList(_data: {
 };
 
 /**
- * save or update a sale. if a code is provided, an update is performed, else an insert.
+ * save or update a transaction. if a code is provided, an update is performed, else an insert.
  * in case of a return sale, be sure to add prop return:yes to the _data
  * @param _data details of the sale such as customer, payment_method, and date, and the details of the items
  * @returns the code of the saved purchase
  */
 export async function save(_data: {
     date?: string,
-    items?: string,
+    items?: ITransactionDetails[],
     code?: string,
+    customer?: string,
+    type: string,
+    client_name: string,
+    client_contact: string,
+    client_address: string,
+    user_name: string,
     created_on?: string,
     return?: string,
     created_by: string,
     user_id: string,
-    customer?: string,
-    amount_paid: string,
-    payment_method: string,
-    momo_reference?: string,
-    insurance_provider?: string,
-    insurance_member_name?: string,
-    insurance_member_id?: string,
-    creditor_name?: string,
-    credit_paid?: string,
     discount?: string,
+    tax?: string,
     shift?: string,
-    tax?: string
+    payments?: TransactionPayments[]
 
 }): Promise<string> {
     try {
         //the data should come with the sale data and
         //the details data.
 
-        let items: any[] = _data.items ? JSON.parse(_data.items) : [];
+        const items: ITransactionDetails[] = _data.items || [];
         //if no code was given, generate one and create. else
         //delete that code and re-insert
         let code = _data.code;
@@ -163,42 +200,25 @@ export async function save(_data: {
 
             if (code) {
                 //editing must not affect the details
-                let object = await Sales.findOne({
+                let object = await Transactions.findOne({
                     where: { code: code }
                 })
-                activity = `updated sales item with code ${code}.`
+                activity = `updated transactions item with code ${code}.`
                 if (!object) {
-                    throw new Error(`Unable to update sale with code: ${code}. Not found`);
+                    throw `Unable to update sale with code: ${code}. Not found`;
                 }
-                Sales.update(_data, {
+                Transactions.update(_data, {
                     transaction: t,
                     where: {
                         code: code
                     }
                 });
-                // await object.update(_data, {
-                //     transaction: t,
-                //     logging(sql, timing?) {
-                //         console.log(sql, timing)
-                //     },
-                // });
-                //update the created_on for the products as well
-                await SalesDetails.update({
-                    created_on: timestamp
-                }, {
-                    transaction: t,
-                    where: {
-                        code: code
-                    }
-                })
-
+                return code;
             }
             else {
                 //generate code
-                code = crypto.randomUUID();
-                if (isReturn) {
-                    code = "RT-" + code;
-                }
+                const newCode = isReturn ? crypto.randomUUID() : "RT-" +crypto.randomUUID();
+
                 activity = `created sale item with code ${code}`
 
 
@@ -206,22 +226,19 @@ export async function save(_data: {
                 _data.created_by = _data.user_id;
                 _data.created_on = timestamp;
                 _data.date = date;
-                await Sales.create(_data, {
+                await Transactions.create(_data, {
                     transaction: t
                 });
                 items.map(item => {
-                    item.code = code;
-                    item.date = _data.date;
-                    item.created_by = _data.user_id;
-                    item.date = date;
-                    item.created_on = timestamp;
+                    item.code = newCode;
                 })
 
-                await SalesDetails.bulkCreate(items,
+                await TransactionDetails.bulkCreate(items as {[key:string]:any} [],
                     {
                         transaction: t
                     });
 
+                    code = newCode;
             }
 
             t.afterCommit(async () => {
@@ -301,22 +318,22 @@ export async function saveDailyRecord(_data: {
  * @param _data must contain some search params
  * @returns a list of purchase details
  */
-export async function getDetails(_data: { customer?: string, param?: string }): Promise<SalesDetails[]> {
+export async function getDetails(_data: { customer?: string, param?: string }): Promise<TransactionDetails[]> {
     try {
 
         let where: WhereOptions = {};
         //if customer..
         if (_data.customer) {
-            where['code'] = sequelize.literal(`(code in (select code from ${Sales.tableName} where customer = '${_data.customer}'))`)
+            where['code'] = sequelize.literal(`(code in (select code from ${Transactions.tableName} where customer = '${_data.customer}'))`)
         }
         if (_data.param) {
             let searchQuery = JSON.parse(_data.param)
             where = parseSearchQuery(searchQuery)
         }
-        let objects = await SalesDetails.findAll({
+        let objects = await TransactionDetails.findAll({
             attributes: {
                 include: [
-                    [sequelize.literal(`${SalesDetails.name + '.price'} * ${SalesDetails.name + '.quantity'}`), STRING_TOTAL],
+                    [sequelize.literal(`${TransactionDetails.name + '.price'} * ${TransactionDetails.name + '.quantity'}`), STRING_TOTAL],
                     [sequelize.col('Product.name'), 'product_name'], // Alias the attribute to 'product_name'
                     [sequelize.col('Product.id'), 'product_id']
                 ]
@@ -338,28 +355,28 @@ export async function getDetails(_data: { customer?: string, param?: string }): 
 
 
 /**
- * delete Sales using the codes
+ * delete Transactions using the codes
  * @param _data must contain the codes to be deleted as an array stringified
  */
 export async function deleteSales(_data: { codes: string, user_id: string }): Promise<boolean> {
     try {
         let codes: any[] = JSON.parse(_data.codes);
         //get all the items in the codes
-        let items = await SalesDetails.findAll({
+        let items = await TransactionDetails.findAll({
             where: {
                 code: { [Op.in]: codes }
             }
         })
         const result = await sequelize.transaction(async (t: Transaction) => {
 
-            await Sales.destroy({
+            await Transactions.destroy({
                 where: {
                     code: { [Op.in]: codes }
                 },
                 transaction: t
             });
 
-            await SalesDetails.destroy({
+            await TransactionDetails.destroy({
                 where: {
                     code: { [Op.in]: codes }
                 },
@@ -372,7 +389,7 @@ export async function deleteSales(_data: { codes: string, user_id: string }): Pr
                 }));
                 updateStockValue();
                 Activities.create({
-                    activity: `temporarily deleted sales invoices with codes ${_data.codes}`,
+                    activity: `temporarily deleted transactions invoices with codes ${_data.codes}`,
                     user_id: `${_data.user_id}`,
                     module: module_name
                 })
@@ -392,9 +409,9 @@ export async function deleteSales(_data: { codes: string, user_id: string }): Pr
  * @param _data must contain the id or code of the sale
  * @returns a purchase item
  */
-export async function find(_data: { id: string }): Promise<Sales> {
+export async function find(_data: { id: string }): Promise<Transactions> {
     try {
-        let object = await Sales.findOne({
+        let object = await Transactions.findOne({
 
             where: {
                 [Op.or]: [
@@ -418,13 +435,13 @@ export async function find(_data: { id: string }): Promise<Sales> {
             },
 
             {
-                model: SalesDetails,
-                as: SalesDetails.tableName,
+                model: TransactionDetails,
+                as: TransactionDetails.tableName,
 
                 attributes: [
 
                     [sequelize.literal('SUM(quantity * price)'), STRING_TOTAL],
-                    [sequelize.literal(`count(${SalesDetails.tableName}.id)`), STRING_NUMBER_OF_ITEMS]
+                    [sequelize.literal(`count(${TransactionDetails.tableName}.id)`), STRING_NUMBER_OF_ITEMS]
 
                 ]
 
@@ -466,11 +483,11 @@ export async function getTotals(_data: { start_date?: string, end_date?: string,
         total_where['created_on'] = { [Op.between]: [new Date(start), end_date] };
         if (customer) {
             total_where['code'] = {
-                [Op.in]: sequelize.literal(`(select code from ${Sales.tableName} where customer = ${customer})`)
+                [Op.in]: sequelize.literal(`(select code from ${Transactions.tableName} where customer = ${customer})`)
             };
             payment_where['payer'] = customer;
         }
-        const getTotal = await SalesDetails.findOne({
+        const getTotal = await TransactionDetails.findOne({
             attributes: [
                 [
                     sequelize.fn('SUM', sequelize.literal('price * quantity')),
@@ -482,7 +499,7 @@ export async function getTotals(_data: { start_date?: string, end_date?: string,
         });
         let total = getTotal?.total || 0
 
-        const getTotalDiscount = await Sales.findOne({
+        const getTotalDiscount = await Transactions.findOne({
             attributes: [
                 [
                     sequelize.fn('SUM', sequelize.literal('discount')),
@@ -497,10 +514,10 @@ export async function getTotals(_data: { start_date?: string, end_date?: string,
 
         //add the payment method
         total_where['code'] = {
-            [Op.in]: sequelize.literal(`(select code from ${Sales.tableName} where payment_method = 'Credit')`)
+            [Op.in]: sequelize.literal(`(select code from ${Transactions.tableName} where payment_method = 'Credit')`)
 
         }
-        const getTotalCredit = await SalesDetails.findOne({
+        const getTotalCredit = await TransactionDetails.findOne({
             attributes: [
                 [
                     sequelize.fn('SUM', sequelize.literal('price * quantity')),
@@ -547,10 +564,10 @@ export async function findUserSummaryBetweenDates(_data: { start_date?: string, 
         let discount_tax_data = await getDiscountTaxReportByUser(start, end);
 
         let overall_total = 0, overall_tax = 0, overall_discount = 0;
-        let results = [];
+        let results:SaleSummaryData[] = [];
 
         let hash: { [key: string]: any } = {};
-        let last_created_by = undefined;
+        let last_created_by = 0;
         let count = 0;
 
         data.forEach(obj => {
@@ -644,7 +661,7 @@ export async function findShiftSummaryBetweenDates(_data: { [key: string]: any }
         let discount_tax_data = await getDiscountTaxReportByShift(start, end)
 
         let overall_total = 0, overall_tax = 0, overall_discount = 0;
-        let results = [];
+        let results:SaleSummaryData[] = [];
 
         let hash: { [key: string]: any } = {};
 
@@ -803,7 +820,7 @@ export async function getBranchDailySalesSummary(_data: { start_date: string; en
         let overall_cost = 0;
         let total_credit = 0;
         let overall_discount = 0;
-        let objects = [];
+        let objects:any[] = [];
         let overall_tax = 0;
         //get the range
         if (queries.length > 0) {
@@ -928,7 +945,7 @@ export async function getBranchDailyRecords(_data: { start_date: string; end_dat
         let queries = await getTotalSummary(start, end);
         //an object to hold the data for each date
         let hash: { [key: string]: any } = {};
-        //the list of total sold from the sales details table
+        //the list of total sold from the transactions details table
         let totalSales = await getTotalSalesList(start, end, ["date"])
         const results:DailyRecords[] = []
         if (queries.length > 0) {
@@ -1004,7 +1021,7 @@ export async function getCategorySales(_data: { start_date: string; end_date: st
         order: [['total', 'DESC']],
         group: ['category'],
         include: {
-            model: SalesDetails,
+            model: TransactionDetails,
             attributes: []
         }
     });

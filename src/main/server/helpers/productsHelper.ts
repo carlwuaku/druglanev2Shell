@@ -30,7 +30,7 @@ export async function updateStockValue(date?: string): Promise<void> {
             cost_value: results.cost_value
         })
     } catch (error: any) {
-        throw new Error(error)
+        throw error
     }
 }
 
@@ -44,13 +44,13 @@ export async function getStockValues(): Promise<IStockValues> {
             ]
         });
         if (!results) {
-            throw new Error("getStockValues object not found")
+            throw "getStockValues object not found"
         }
         return { cost_value: results.cost_value || 0, selling_value: results.selling_value || 0 }
     } catch (error: any) {
-        throw new Error(error)
+        throw error
     }
-    
+
 }
 
 export async function refreshCurrentStock(product_id: number): Promise<void> {
@@ -68,13 +68,13 @@ export async function refreshCurrentStock(product_id: number): Promise<void> {
 
 
     } catch (error:any) {
-        throw new Error(error)
+        throw error
     }
 }
 
 /**
      * calculate the current stock of an item amt sold, bought, transferred in and out, and stock adjustment
-     * @param {Number} id 
+     * @param {Number} id
      * @returns {Number} count
      */
 export async function calculateCurrentStock(product_id: number): Promise<number> {
@@ -128,7 +128,7 @@ export async function calculateCurrentStock(product_id: number): Promise<number>
         return last_stock_count + purchased + received - sold - transfered;
     } catch (error:any) {
         logger.error({ message: error });
-        throw new Error(error);
+        throw error;
 
     }
 }
@@ -150,7 +150,7 @@ export async function closeAllStockAdjustmentSessions(transaction: Transaction):
 /**
  * create a new stock adjustment session and return the code
  * @param t a transaction
- * @param _data 
+ * @param _data
  * @returns the code of the session
  */
 export async function createStockAdjustmentSession(t: Transaction, _data: { date: string, created_on: string, user_id: string }): Promise<string> {

@@ -1,4 +1,5 @@
 import { Table, Model, Column, DataType,  CreatedAt, HasMany, Index, PrimaryKey } from "sequelize-typescript";
+import { CustomerTypes } from "../interfaces/customerTypes";
 import { CustomerDiagnostics } from "./CustomerDiagnostics";
 
 @Table({
@@ -17,26 +18,30 @@ export class Customers extends Model{
   })
   id!: number;
 
-  
+
   @Index
   @Column({
     allowNull: false
   })
   name!: string;
 
-  
+
   @Column
   sex!: string;
 
   @Index
-  @Column
+  @Column({
+    allowNull: false,
+    unique: true
+  })
   phone!: string;
 
   @Index
   @Column({
     validate: {
       isEmail: true
-    }
+    },
+    unique: true
   })
   email!: string;
 
@@ -52,6 +57,9 @@ export class Customers extends Model{
 
   @Column
   location!: string;
+
+  @Column
+  type!: string;
 
   @HasMany(() => CustomerDiagnostics)
   customerDiagnostics!: CustomerDiagnostics[];
