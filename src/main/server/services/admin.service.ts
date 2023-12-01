@@ -60,7 +60,7 @@ export async function login_function(data: { username: any; password: any; }): P
         }
 
         if (!user || !password_valid) {
-            throw new Error(errorMessages.USER_NOT_FOUND)
+            throw errorMessages.USER_NOT_FOUND;
 
         }
         //user is valid
@@ -179,7 +179,7 @@ export async function get_branches_function(): Promise<Branches[]> {
 
     } catch (error: any) {
         logger.error({message:error})
-        throw new Error(errorMessages.ERROR_GETTING_BRANCHES)
+        throw errorMessages.ERROR_GETTING_BRANCHES
     }
 }
 
@@ -210,7 +210,25 @@ export async function get_logo_function(): Promise<string> {
 
     } catch (error: any) {
         logger.error({message:error})
-        throw new Error(errorMessages.ERROR_GETTING_LOGO)
+        throw errorMessages.ERROR_GETTING_LOGO;
+    }
+}
+
+/**
+ * get the logo of the facility
+ * @returns {Promise<ReturnData>}
+ */
+export async function getShifts(): Promise<string[]> {
+    try {
+        let setting = await Settings.findOne({
+            where: {
+                'name': "number_of_shifts"
+            }
+        });
+        return setting?.value ? setting?.value.split(";") : [];
+    } catch (error: any) {
+        logger.error({message:error})
+        throw errorMessages.ERROR_GETTING_LOGO;
     }
 }
 
@@ -228,7 +246,7 @@ export async function getSettings(_data?: { settings: string[] }): Promise<Setti
         return returnData;
     } catch (error: any) {
         logger.error({ message: error})
-        throw new Error(errorMessages.ERROR_GETTING_SETTINGS)
+        throw errorMessages.ERROR_GETTING_SETTINGS;
     }
 
 }
@@ -263,7 +281,7 @@ export async function saveSettings(_data: {[key:string]: any}): Promise<string[]
         return results
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(errorMessages.ERROR_SAVING_SETTINGS)
+        throw errorMessages.ERROR_SAVING_SETTINGS;
     }
 }
 
@@ -288,7 +306,7 @@ export async function save_branch_function(_data: { [key: string]: any}): Promis
         return branch;
     } catch (error: any) {
         logger.error({message:error})
-        throw new Error(errorMessages.ERROR_CREATING_BRANCH)
+        throw errorMessages.ERROR_CREATING_BRANCH;
     }
 }
 
@@ -302,7 +320,7 @@ export async function get_insurers_function(): Promise<InsuranceProviders[]> {
         return insurers
     } catch (error: any) {
         logger.error({message:error})
-        throw new Error(errorMessages.ERROR_GETTING_INSURERS)
+        throw errorMessages.ERROR_GETTING_INSURERS;
 
     }
 }
@@ -325,7 +343,7 @@ export async function add_insurer_function(_data: { [key: string]: any}): Promis
         return insuranceProvider
     } catch (error: any) {
         logger.error({message:error})
-        throw new Error("Error creating insurer")
+        throw "Error creating insurer";
     }
 };
 
@@ -354,7 +372,7 @@ export async function delete_insurer_function(_data: { [key: string]: any}): Pro
         return true
     } catch (error: any) {
         logger.error({message:error})
-        throw new Error("Error deleting insurer")
+        throw "Error deleting insurer";
     }
 };
 
@@ -410,7 +428,7 @@ export async function get_all_activities_function(_data: {
         return objects
     } catch (error: any) {
         logger.error({message:error})
-        throw new Error("Error getting activities")
+        throw "Error getting activities";
     }
 
 };
@@ -442,7 +460,7 @@ export async function get_activities_function(_data: { [key: string]: any}): Pro
         return objects
     } catch (error: any) {
         logger.error({message:error})
-        throw new Error("Error getting Activities")
+        throw "Error getting Activities";
     }
 
 };
@@ -489,7 +507,7 @@ export async function get_user_activities_function(_data: { [key: string]: any})
         return objects
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error("Error getting Activities")
+        throw "Error getting Activities";
     }
 
 };
@@ -518,7 +536,7 @@ export async function get_users_function(_data: { [key: string]: any}): Promise<
         // console.log(error)
 
         logger.error({ message: error })
-        throw new Error("Error getting users")
+        throw "Error getting users";
     }
 };
 
@@ -608,7 +626,7 @@ export async function delete_user_function(_data: { [key: string]: any}): Promis
         return true
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error)
+        throw error;
     }
 
 };
@@ -631,11 +649,11 @@ export async function get_user_function(_data: { [key: string]: any}): Promise<U
         }
         );
 
-        if (!user) throw new Error(`user ${_data.id} not found`);
+        if (!user) throw `user ${_data.id} not found`;
         return user
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error)
+        throw error;
     }
 
 };
@@ -665,7 +683,7 @@ export async function activate_user_function(_data: { [key: string]: any}): Prom
         return true
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(`Error activating user: error: ${error}`)
+        throw `Error activating user: error: ${error}`;
     }
 
 };
@@ -677,7 +695,7 @@ export async function update_user_function(_data: {[key:string]:any}): Promise<b
     //console.log(id)
     try {
         let user = await Users.findByPk(_data.id);
-        if (!user) throw new Error(`user ${_data.id} not found`);
+        if (!user) throw `user ${_data.id} not found`;
         user.set(_data)
         await user.save();
 
@@ -692,7 +710,7 @@ export async function update_user_function(_data: {[key:string]:any}): Promise<b
         return true
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(`Error updating user: error: ${error}`)
+        throw `Error updating user: error: ${error}`;
     }
 
 };
@@ -715,7 +733,7 @@ export async function addRole(_data: {
         if (id) {
             role = await Roles.findByPk(id);
             if (!role) {
-                throw new Error(`error updating a role id ${id}. Not found `);
+                throw `error updating a role id ${id}. Not found `;
             }
             Roles.update({ role_name: _data.role_name, description: _data.description }, {
                 where: {
@@ -748,7 +766,7 @@ export async function addRole(_data: {
         return role!;
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(`Error adding/updating a role: ${error}`)
+        throw `Error adding/updating a role: ${error}`;
 
     }
 
@@ -775,7 +793,7 @@ export async function get_roles_function(_data: { offset?: string, limit?:string
         return data;
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(`Error getting roles: ${error}`)
+        throw `Error getting roles: ${error}`;
     }
 
 };
@@ -803,7 +821,7 @@ export async function get_role_permissions_function(_data: { id:string}): Promis
         return data
     } catch (error: any) {
         logger.error({ message: error });
-        throw new Error(`Error getting role permissions for role_id: ${_data.id}: ${error}`)
+        throw `Error getting role permissions for role_id: ${_data.id}: ${error}`;
     }
 
 };
@@ -830,7 +848,7 @@ export async function get_role_excluded_permissions_function(_data: { [key: stri
         return data
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(`Unable to get excluded permissions for role id: ${_data.id}: ${error}`)
+        throw `Unable to get excluded permissions for role id: ${_data.id}: ${error}`;
     }
 
 };
@@ -852,8 +870,8 @@ export async function add_role_permission_function (_data: {[key:string]:any}): 
         return role_permission
     } catch (error: any) {
         logger.error({message:error})
-        throw new Error(`Unable to add a permission ${_data.permission_name}
-        to role: ${_data.role_name}: : ${error}`)
+        throw `Unable to add a permission ${_data.permission_name}
+        to role: ${_data.role_name}: : ${error}`;
     }
 
 };
@@ -868,7 +886,7 @@ export async function get_permissions_function(): Promise<Permissions[]> {
         return data
     } catch (error: any) {
         logger.error({ message: error });
-        throw new Error(`Error getting all permissions for role_id: ${error}`)
+        throw `Error getting all permissions for role_id: ${error}`;
     }
 
 };
@@ -884,11 +902,11 @@ export async function delete_role_permission_function(_data: { role_id: string; 
         const role = await Roles.findByPk(_data.role_id);
         const permission = await Permissions.findByPk(_data.permission_id);
         if (!role) {
-            throw new Error("Unable to find specified role");
+            throw "Unable to find specified role";
 
         }
         if (!permission) {
-            throw new Error("Unable to find specified permission");
+            throw "Unable to find specified permission";
 
         }
         await RolePermissions.destroy({
@@ -906,7 +924,7 @@ export async function delete_role_permission_function(_data: { role_id: string; 
         return true
     } catch (error: any) {
         logger.error({message: error})
-        throw new Error(`Error removing permission from role: error: ${error}`)
+        throw `Error removing permission from role: error: ${error}`;
     }
 
 };
@@ -933,7 +951,7 @@ export async function delete_role_function(_data: { id: string; user_id: string;
 
     } catch (error: any) {
        logger.error({message:error})
-        throw new Error("Error deleting a role. Error: "+error)
+        throw "Error deleting a role. Error: "+error;
 
     }
 };//tested
@@ -945,12 +963,12 @@ export async function get_role_function(_data: { [key: string]: any}): Promise<R
             include: [Permissions]
         })
 
-        if (!object) throw new Error(`role ${_data.id} not found`);
+        if (!object) throw `role ${_data.id} not found`;
 
         return object
     } catch (error: any) {
         logger.error({message: error})
-        throw new Error("Error getting a role. Error: " + error)
+        throw "Error getting a role. Error: " + error;
     }
 
 };
@@ -974,7 +992,7 @@ export async function change_staff_password_function(_data: { [key: string]: any
         }
 
         if (user == null || !password_valid) {
-            throw new Error(errorMessages.WRONG_COMBINATION)
+            throw errorMessages.WRONG_COMBINATION;
 
         }
         //user is valid. update the password
@@ -997,7 +1015,7 @@ export async function change_staff_password_function(_data: { [key: string]: any
     } catch (error: any) {
         logger.error({message: error})
 
-        throw new Error(error)
+        throw error;
     }
 
 
@@ -1046,7 +1064,7 @@ Please use this code as token in the reset page: ${token}.`;
     catch (error: any) {
         logger.error({ message: error })
 
-        throw new Error(error)
+        throw error;
     }
 }
 
@@ -1076,7 +1094,7 @@ export async function doResetAdminPassword(_data:{password:string, token:string}
     catch (error: any) {
         logger.error({ message: error })
 
-        throw new Error(error)
+        throw error;
     }
 }
 
@@ -1118,7 +1136,7 @@ export async function doResetAdminPassword(_data:{password:string, token:string}
 //         if (process.env.NODE_ENV != "production") console.log(error)
 
 //         log.error(error)
-//         throw new Error(error)
+//         throw error)
 //     }
 
 
@@ -1174,7 +1192,7 @@ export async function doResetAdminPassword(_data:{password:string, token:string}
 //         // if(process.env.NODE_ENV != "production") console.log(error)
 
 //         log.error(error)
-//         throw new Error(error)
+//         throw error)
 //     }
 
 // };
@@ -1201,7 +1219,7 @@ export async function doResetAdminPassword(_data:{password:string, token:string}
 //     } catch (error: any) {
 //         await helper.closeConnection();
 //         log.error(error)
-//         throw new Error(error)
+//         throw error)
 //     }
 
 // };
@@ -1223,7 +1241,7 @@ export async function doResetAdminPassword(_data:{password:string, token:string}
 //     } catch (error: any) {
 //         await helper.closeConnection();
 //         log.error(error)
-//         throw new Error(error)
+//         throw error)
 //     }
 
 // };
@@ -1352,7 +1370,7 @@ export async function doResetAdminPassword(_data:{password:string, token:string}
 //     } catch (error: any) {
 //         log.error(error)
 //         // console.log(error)
-//         throw new Error(error)
+//         throw error)
 
 //     }
 

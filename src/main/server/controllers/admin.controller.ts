@@ -1,7 +1,7 @@
 import { logger } from '../config/logger';
 import express, { Router, Response, Request } from 'express';
 const router: Router = express.Router();
-import {addRole, delete_role_function, delete_role_permission_function, delete_user_function, doResetAdminPassword, getSettings, get_branches_function, get_insurers_function, get_logo_function, get_permissions_function, get_roles_function, get_role_function, get_role_permissions_function, get_users_function, get_user_function, login_function, resetAdminPassword, saveSettings, save_branch_function, save_user_function, server_admin_login_function} from '../services/admin.service'
+import {addRole, delete_role_function, delete_role_permission_function, delete_user_function, doResetAdminPassword, getSettings, getShifts, get_branches_function, get_insurers_function, get_logo_function, get_permissions_function, get_roles_function, get_role_function, get_role_permissions_function, get_users_function, get_user_function, login_function, resetAdminPassword, saveSettings, save_branch_function, save_user_function, server_admin_login_function} from '../services/admin.service'
 import { hasPermission } from '../utils/auth';
 import { constants } from '../utils/constants';
 import { extractSqlMessage } from '../helpers/generalHelper';
@@ -103,6 +103,17 @@ router.get('/getLogo', async (req: Request, res: Response) => {
     } catch (error) {
         logger.error(error)
         res.status(500).json({ message: extractSqlMessage(error) })
+    }
+})
+
+router.get('/getShifts', async (req: Request, res: Response) => {
+
+    try {
+        let data = await getShifts();
+        res.status(201).json(data);
+    } catch (error) {
+        logger.error(error)
+        res.status(500).json({ message: error })
     }
 })
 

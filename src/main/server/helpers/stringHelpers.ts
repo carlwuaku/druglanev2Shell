@@ -12,7 +12,8 @@ export const errorMessages = {
     INCORRECT_REQUEST_CONFIG: "Incorrect request config. Please log out and login again",
     INCORRECT_SYSTEM_CONFIG: "Incorrect system config. Please contact support for help",
     NOT_LOGGED_IN_AS_ADMIN: "You are not logged in as the admin. Please log out and login again",
-    PASSWORD_INCORRECT: "Incorrect Password"
+    PASSWORD_INCORRECT: "Incorrect Password",
+    ERROR_GETTING_SHIFTS: "Error getting shifts"
 }
 
 export const infoMessages = {

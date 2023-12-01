@@ -7,20 +7,20 @@ import { getToday } from '../helpers/dateHelper';
 
 export async function save_outgoing_payment_function  (_data: { [key: string]: any}):Promise<OutgoingPayments>  {
     try {
-       
+
         let object = await OutgoingPayments.create(_data);
         Activities.create({
             activity: `added a new payment`,
             user_id: _data.user_id,
             module: 'System'
         })
-        
+
 
         return object
     } catch (error: any) {
-    
+
         logger.error({ message: error })
-        throw new Error(error)
+        throw error;
     }
 };
 
@@ -38,13 +38,13 @@ export async function find_outgoing_payments_between_dates_function(_data: { [ke
         return objects;
     } catch (error: any) {
         logger.error({ message: error })
-        throw new Error(error)
+        throw error;
     }
 
 };
 
 export async function delete_payment_function(_data: { [key: string]: any}):Promise<boolean>  {
-   
+
     try {
         let id = _data.id;
         let object = await OutgoingPayments.findOne({
@@ -52,8 +52,8 @@ export async function delete_payment_function(_data: { [key: string]: any}):Prom
                 id: id
             }
         })
-        if (!object) throw new Error(`delete_payment_function object not found by id ${id}`);
-        
+        if (!object) throw (`delete_payment_function object not found by id ${id}`);
+
         await object.destroy();
         Activities.create({
             activity: `deleted payment record to ${object.recipient} made on ${object.date}`,
@@ -61,10 +61,10 @@ export async function delete_payment_function(_data: { [key: string]: any}):Prom
             module: 'users'
         })
         return true
-        
+
     } catch (error: any) {
         logger.error({message: error})
-        throw new Error(error)
+        throw error;
     }
 
 };
@@ -91,11 +91,11 @@ export async function find_vendor_outgoing_payments_between_dates_function (_dat
                     [Op.between]:[start, end]}
             }
         });
-       
+
         return objects
     } catch (error: any) {
         logger.error({message: error})
-        throw new Error(error)
+        throw error;
     }
 
 };
@@ -175,7 +175,7 @@ export async function find_vendor_outgoing_payments_between_dates_function (_dat
 //         // if(process.env.NODE_ENV != "production") console.log(error)
 
 //         log.error(error)
-//         throw new Error(error)
+//         throw error;
 //     }
 
 // };
