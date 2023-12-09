@@ -45,9 +45,9 @@ import { runBackup } from './utils/backup';
 import { checkDatabaseExists, createDatabase } from './server/config/dbSetup';
 import { config } from './server/config/config';
 class ServerEvents extends EventEmitter {
-    constructor() {
-        super();
-    }
+  constructor() {
+    super();
+  }
 
 
 }
@@ -64,49 +64,49 @@ let mainWindow: BrowserWindow | null = null;
 let serverProcess: ChildProcess;
 const serverEventEmitter = new ServerEvents();
 const store = new Store();
-const SERVER_PORT:any = store.get(PORT, constants.port);
+const SERVER_PORT: any = store.get(PORT, constants.port);
 
 //activation things. use them once the activation is done.
-let secretKey:string = "";
-let activationData:any = "";
+let secretKey: string = "";
+let activationData: any = "";
 
 
 
 let serverUrl: string = `http://127.0.0.1:${SERVER_PORT}`;
 let lastServerUrl: string = "";
 
-let appIsActivated:boolean =  false;
+let appIsActivated: boolean = false;
 //test the database connection
-async function runTestDb(){
-try{
-  const databaseExists = await checkDatabaseExists();
-  if (!databaseExists) {
-     await createDatabase();
-     //the activation and db creation should ideally happen on the first startup. but just to be
-     //safe
-     appIsActivated = false;
+async function runTestDb() {
+  try {
+    const databaseExists = await checkDatabaseExists();
+    if (!databaseExists) {
+      await createDatabase();
+      //the activation and db creation should ideally happen on the first startup. but just to be
+      //safe
+      appIsActivated = false;
     } else {
       appIsActivated = isAppActivated();
       console.log('Database already exists. Skipping creation.');
     }
-  await testConnection();
-}
-catch(error:any){
-  const dbConfig = config[process.env.NODE_ENV!];
-  log.error(error)
-  dialog.showErrorBox("Druglane: Error during startup",`Unable to connect to the Database: ${error}.
+    await testConnection();
+  }
+  catch (error: any) {
+    const dbConfig = config[process.env.NODE_ENV!];
+    log.error(error)
+    dialog.showErrorBox("Druglane: Error during startup", `Unable to connect to the Database: ${error}.
    Please make sure MariaDB is installed and running on port ${dbConfig.port}`);
-  app.exit();
+    app.exit();
+  }
 }
-}
 
 
 
-const systemErrors:any[] = [];
+const systemErrors: any[] = [];
 
 let serverState: "Application Activated" |
-    "Application Not Activated" | "Server Started" | "Checking Activation"
-    | "Server Starting" | "Server Stopping" | "Server Running"  = "Checking Activation";
+  "Application Not Activated" | "Server Started" | "Checking Activation"
+  | "Server Starting" | "Server Stopping" | "Server Running" = "Checking Activation";
 
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
@@ -114,14 +114,14 @@ ipcMain.on('ipc-example', async (event, arg) => {
   event.reply('ipc-example', msgTemplate('pong'));
 });
 
-const runBackupListener = (event:Electron.IpcMainEvent, arg:any) =>{
+const runBackupListener = (event: Electron.IpcMainEvent, arg: any) => {
   try {
-     runBackup();
-  dialog.showMessageBox(mainWindow!,{
-    message:"Backup was successful"
-  })
+    runBackup();
+    dialog.showMessageBox(mainWindow!, {
+      message: "Backup was successful"
+    })
   } catch (error) {
-    dialog.showErrorBox("Druglane Backup",`An error occured during backup: ${error}`)
+    dialog.showErrorBox("Druglane Backup", `An error occured during backup: ${error}`)
   }
 }
 
@@ -130,11 +130,11 @@ ipcMain.on(START_BACKUP, runBackupListener);
 ipcMain.on(CALL_ACTIVATION, async (event, key) => {
   try {
     let response = await verifyLicenseKey(key);
-    if(response.data.status == "1"){
+    if (response.data.status == "1") {
       console.log("activation was good")
       secretKey = response.data.secretKey;
       response.data.data.company_id = response.data.data.id
-      activationData  = response.data.data;
+      activationData = response.data.data;
 
 
       startServer(SERVER_PORT)
@@ -147,8 +147,8 @@ ipcMain.on(CALL_ACTIVATION, async (event, key) => {
       error: false,
       message: '',
     });
-  } catch (error:any) {
-    dialog.showErrorBox("Activation",`Error during server call: ${error.message}`)
+  } catch (error: any) {
+    dialog.showErrorBox("Activation", `Error during server call: ${error.message}`)
     event.reply(ACTIVATION_RESULT, {
       data: null,
       error: true,
@@ -158,11 +158,11 @@ ipcMain.on(CALL_ACTIVATION, async (event, key) => {
 });
 
 ipcMain.on(OPEN_BACKUPS_FOLDER, (event, data) => {
-    shell.showItemInFolder(constants.internal_backups_path)
-  })
-  ipcMain.on(OPEN_LOGS_FOLDER, (event, data) => {
-    shell.showItemInFolder(path.join(constants.settings_location,'logs'))
-  })
+  shell.showItemInFolder(constants.internal_backups_path)
+})
+ipcMain.on(OPEN_LOGS_FOLDER, (event, data) => {
+  shell.showItemInFolder(path.join(constants.settings_location, 'logs'))
+})
 
 function sendServerUrl() {
   mainWindow?.webContents?.send(
@@ -173,13 +173,13 @@ function sendServerUrl() {
 }
 
 function sendServerState(state: string) {
-    console.log('server state', state)
-    mainWindow?.webContents?.send(SERVER_STATE_CHANGED, { data: state, time: new Date().toLocaleString() })
+  console.log('server state', state)
+  mainWindow?.webContents?.send(SERVER_STATE_CHANGED, { data: state, time: new Date().toLocaleString() })
 }
 
 function getAppDetails() {
-    const title = `${constants.appname} v${app.getVersion()}`
-    mainWindow?.webContents?.send("appDetailsSent", { title: title })
+  const title = `${constants.appname} v${app.getVersion()}`
+  mainWindow?.webContents?.send("appDetailsSent", { title: title })
 }
 
 ipcMain.on(GET_APP_DETAILS, getAppDetails);
@@ -194,7 +194,7 @@ ipcMain.on(GET_SYSTEM_ERRORS, (event, data: { key: string }) => {
 
 ipcMain.on(GET_ACTIVATION_STATE, (event, data: { key: string }) => {
   console.log("sending activation state", appIsActivated)
-  event.reply(ACTIVATION_STATE_RECEIVED,  appIsActivated)
+  event.reply(ACTIVATION_STATE_RECEIVED, appIsActivated)
 });
 
 // ipcMain.on(RESTART_SERVER, async (event, data) => {
@@ -206,12 +206,12 @@ ipcMain.on(GET_ACTIVATION_STATE, (event, data: { key: string }) => {
 // });
 
 ipcMain.on(GET_SERVER_URL, (event, data: { key: string }) => {
-  event.reply( SERVER_URL_RECEIVED,
-     serverUrl
+  event.reply(SERVER_URL_RECEIVED,
+    serverUrl
   )
 });
 ipcMain.on(GET_PREFERENCES, (event) => {
-    store.openInEditor()
+  store.openInEditor()
 })
 
 // ipcMain.on(GET_PREFERENCE, (event, data: { key: string }) => {
@@ -236,14 +236,14 @@ ipcMain.on(GET_PREFERENCES, (event) => {
 // });
 
 ipcMain.on(SETUP_FINISHED, (event) => {
-  try{
-setSecretKey(secretKey);
-      activateApplication(activationData);
-      //restart the application
-       restartApp();
+  try {
+    setSecretKey(secretKey);
+    activateApplication(activationData);
+    //restart the application
+    restartApp();
   }
-  catch(error:any){
-    dialog.showErrorBox("Druglane:","An error occured during activation: "+error);
+  catch (error: any) {
+    dialog.showErrorBox("Druglane:", "An error occured during activation: " + error);
   }
 
 });
@@ -344,47 +344,47 @@ app.on('window-all-closed', () => {
 
 app
   .whenReady()
-  .then( async () => {
+  .then(async () => {
     createWindow();
     await runTestDb();
     console.log('appisactivated', appIsActivated)
-        if (appIsActivated) {
-          try{
+    if (appIsActivated) {
+      try {
 
-    startServer(SERVER_PORT);
-    const serverEmitter = getServerEmitter();
+        startServer(SERVER_PORT);
+        const serverEmitter = getServerEmitter();
 
-    serverEmitter.on(SERVER_STATE_CHANGED, (data) => {
-      console.log('server state change emitted',data)
-    serverState = data;
-    sendServerState(data);
-})
+        serverEmitter.on(SERVER_STATE_CHANGED, (data) => {
+          console.log('server state change emitted', data)
+          serverState = data;
+          sendServerState(data);
+        })
 
-serverEmitter.on(SERVER_MESSAGE_RECEIVED, (data) => {
-  console.log('server message received emitted',data)
-  dialog.showErrorBox("System error", data)
-  if(mainWindow?.webContents){
-    mainWindow?.webContents?.send(SERVER_MESSAGE_RECEIVED, { data, time: new Date().toLocaleString() });
-  }
-  else{
-systemErrors.push(data)
-  }
+        serverEmitter.on(SERVER_MESSAGE_RECEIVED, (data) => {
+          console.log('server message received emitted', data)
+          dialog.showErrorBox("System error", data)
+          if (mainWindow?.webContents) {
+            mainWindow?.webContents?.send(SERVER_MESSAGE_RECEIVED, { data, time: new Date().toLocaleString() });
+          }
+          else {
+            systemErrors.push(data)
+          }
 
-})
-serverEmitter.on(SERVER_URL_UPDATED, (data) => {
-  console.log('server url change emitted',data)
-    serverUrl = data;
-    if (lastServerUrl !== serverUrl) {
-        sendServerUrl();
-        lastServerUrl = serverUrl;
+        })
+        serverEmitter.on(SERVER_URL_UPDATED, (data) => {
+          console.log('server url change emitted', data)
+          serverUrl = data;
+          if (lastServerUrl !== serverUrl) {
+            sendServerUrl();
+            lastServerUrl = serverUrl;
+          }
+
+        });
+      }
+      catch (error: any) {
+        dialog.showErrorBox("Starting Server", error)
+      }
     }
-
-});
-          }
-          catch(error:any){
-            dialog.showErrorBox("Starting Server", error)
-          }
-        }
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.
@@ -451,6 +451,6 @@ serverEmitter.on(SERVER_URL_UPDATED, (data) => {
 // }
 
 function restartApp() {
-    app.relaunch()
-    app.exit()
+  app.relaunch()
+  app.exit()
 }
